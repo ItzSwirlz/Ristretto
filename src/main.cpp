@@ -1,5 +1,5 @@
 #include <cstddef>
-#include <tinyhttp/http.hpp>
+#include <http/http.hpp>
 #include <nn/ac.h>
 #include "utils/logger.h"
 #include <coreinit/filesystem.h>
