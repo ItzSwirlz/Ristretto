@@ -245,10 +245,31 @@ void make_server() {
 			// }
 			// nn::act::Finalize ();
 	messages.push_back("Test message");
+	// Empty endpoint to allow for device discovery.
+	server.when("/")->posted([](const HttpRequest& req) {
+        return HttpResponse{200};
+    });
+
+	// Shutsdown the console regardless of what state it currently is in.
 	server.when("/shutdown")->posted([](const HttpRequest& req) {
 	   OSShutdown();
-            return HttpResponse{201};
-        });
+        return HttpResponse{200};
+    });
+
+	// Launches the Wii U Menu
+	server.when("/launch/menu")->posted([](const HttpRequest& req) {
+	   // FIXME: May lock up when the plugin is inactive, like in friends list
+	   SYSLaunchMenu();
+        return HttpResponse{200};
+    });
+
+	// Launches the current title's manual
+	server.when("/launch/emanual")->posted([](const HttpRequest& req) {
+	   // FIXME: If the title has no manual, DO NOT SWITCH!!!! IT WILL LOCKUP THE SYSTEM! (eg Friends List)
+	   SYSSwitchToEManual();
+        return HttpResponse{200};
+    });
+
 	server.startListening(8572);
     } catch(std::exception& e) {
         DEBUG_FUNCTION_LINE_INFO("got error: %s\n", e.what());
