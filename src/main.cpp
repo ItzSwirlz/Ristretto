@@ -1,6 +1,10 @@
 #include <cstddef>
+#include <coreinit/launch.h>
 #include <http/http.hpp>
 #include <nn/ac.h>
+#include <nn/act.h>
+#include <sysapp/launch.h>
+#include <coreinit/thread.h>
 #include "utils/logger.h"
 #include <coreinit/filesystem.h>
 #include <malloc.h>
@@ -15,7 +19,7 @@
     Mandatory plugin information.
     If not set correctly, the loader will refuse to use the plugin.
 **/
-WUPS_PLUGIN_NAME("Smart Espresso")
+WUPS_PLUGIN_NAME("SmartEspresso")
 WUPS_PLUGIN_DESCRIPTION("home automation attempt");
 WUPS_PLUGIN_VERSION("v1.0");
 WUPS_PLUGIN_AUTHOR("ItzSwirlz");
@@ -51,6 +55,7 @@ int sIntegerRangeValue             = INTEGER_RANGE_DEFAULT_VALUE;
 ExampleOptions sExampleOptionValue = MULTIPLE_VALUES_DEFAULT_VALUE;
 HttpServer server;
 bool server_made = false;
+static std::vector<std::string> messages;
 
 /**
  * Callback that will be called if the config has been changed
@@ -223,14 +228,48 @@ DEINITIALIZE_PLUGIN() {
     DEBUG_FUNCTION_LINE("DEINITIALIZE_PLUGIN of example_plugin!");
 }
 
+void make_server() {
+    try {
+    // nn::ac::Initialize ();
+	// nn::ac::ConnectAsync ();
+	// nn::act::Initialize ();
+	// pulled from ftpiiu
+			// for (int32_t i = 0; i < 13; i++)
+			// {
+			// 	if (!nn::act::IsSlotOccupied (i))
+			// 	{
+			// 		continue;
+			// 	}
+			// 	char buffer[9];
+			// 	snprintf (buffer, sizeof (buffer), "%08X", nn::act::GetPersistentIdEx (i));
+			// }
+			// nn::act::Finalize ();
+	messages.push_back("Test message");
+	server.when("/shutdown")->posted([](const HttpRequest& req) {
+	   OSShutdown();
+            return HttpResponse{201};
+        });
+	server.startListening(8572);
+    } catch(std::exception& e) {
+        DEBUG_FUNCTION_LINE_INFO("got error: %s\n", e.what());
+    }
+}
+
+void stop_server() {
+    server.shutdown();
+}
+
 /**
     Gets called when an application starts.
 **/
 ON_APPLICATION_START() {
     initLogging();
-    nn::ac::Initialize ();
-	nn::ac::ConnectAsync ();
-	server.startListening(8000);
+    try {
+        std::jthread thready(make_server);
+        thready.detach();
+    } catch(std::exception& e) {
+        DEBUG_FUNCTION_LINE_INFO("got error: %s\n", e.what());
+    }
     DEBUG_FUNCTION_LINE("ON_APPLICATION_START of example_plugin!");
 }
 
@@ -239,6 +278,7 @@ ON_APPLICATION_START() {
  */
 ON_APPLICATION_ENDS() {
     deinitLogging();
+    stop_server();
 }
 
 /**

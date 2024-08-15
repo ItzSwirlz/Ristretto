@@ -1,7 +1,9 @@
 #ifndef HTTP_SERVER_H
 #define HTTP_SERVER_H
 
-#define MSG_NOSIGNAL 0x80000
+// wii u doesnt have this?
+#define MSG_NOSIGNAL 0
+
 
 // json support (Currently uses MiniJson)
 //

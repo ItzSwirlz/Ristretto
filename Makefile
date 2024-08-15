@@ -10,6 +10,7 @@ TOPDIR ?= $(CURDIR)
 
 include $(DEVKITPRO)/wups/share/wups_rules
 
+CXX += -std=c++23
 WUT_ROOT := $(DEVKITPRO)/wut
 #-------------------------------------------------------------------------------
 # TARGET is the name of the output
@@ -20,7 +21,7 @@ WUT_ROOT := $(DEVKITPRO)/wut
 #-------------------------------------------------------------------------------
 TARGET		:=	SmartEspresso
 BUILD		:=	build
-SOURCES		:=	src src/utils
+SOURCES		:=	src src/utils src/http
 DATA		:=	data
 INCLUDES	:=	src
 
@@ -28,11 +29,11 @@ INCLUDES	:=	src
 # options for code generation
 #-------------------------------------------------------------------------------
 CFLAGS	:=	-g -Wall -O2 -ffunction-sections \
-			$(MACHDEP)
+			$(MACHDEP) -std=c++23
 
 CFLAGS	+=	$(INCLUDE) -D__WIIU__ -D__WUT__ -D__WUPS__
 
-CXXFLAGS	:= $(CFLAGS) -std=c++20
+CXXFLAGS	:= $(CFLAGS) -std=c++23
 
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-g $(ARCH) $(RPXSPECS) -Wl,-Map,$(notdir $*.map) $(WUPSSPECS)
