@@ -1,5 +1,6 @@
 #include "http.hpp"
 
+#include <sys/socket.h>
 #ifndef TINYHTTP_WS
 #  warning "You are compiling websock.cpp but you haven't enabled TINYHTTP_WS, please check your build system"
 #endif
@@ -359,7 +360,7 @@ void WebsockClientHandler::sendRaw(uint8_t opcode, const void* data, size_t leng
 
     if (!data)
         length = 0;
-    
+
     const uint8_t* data_u8 = reinterpret_cast<const uint8_t*>(data);
     uint32_t key = static_cast<uint32_t>(rand());
 
@@ -401,7 +402,7 @@ void WebsockClientHandler::sendRaw(uint8_t opcode, const void* data, size_t leng
         } else {
             memcpy(packetBuffer + headerPosition, data_u8 + bufferPosition, lengthToSend);
         }
-        
+
         try {
             mClient->send(packetBuffer, lengthToSend + headerPosition);
         } catch (std::runtime_error& e) {

@@ -1,6 +1,8 @@
 #ifndef HTTP_SERVER_H
 #define HTTP_SERVER_H
 
+#define MSG_NOSIGNAL 0x80000
+
 // json support (Currently uses MiniJson)
 //
 // -------- disabling for smartespresso. ----------
@@ -56,7 +58,9 @@
 #include <fstream>
 #include <list>
 #include <chrono>
+#include <sys/endian.h>
 
+#include <sys/socket.h>
 #ifdef TINYHTTP_THREADING
 #  include <thread>
 #  include <mutex>

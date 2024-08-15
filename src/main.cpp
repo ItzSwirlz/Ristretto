@@ -230,6 +230,7 @@ ON_APPLICATION_START() {
     initLogging();
     nn::ac::Initialize ();
 	nn::ac::ConnectAsync ();
+	server.startListening(8000);
     DEBUG_FUNCTION_LINE("ON_APPLICATION_START of example_plugin!");
 }
 
