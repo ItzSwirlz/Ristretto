@@ -1,3 +1,6 @@
+#include <cstddef>
+#include <tinyhttp/http.hpp>
+#include <nn/ac.h>
 #include "utils/logger.h"
 #include <coreinit/filesystem.h>
 #include <malloc.h>
@@ -46,6 +49,8 @@ enum ExampleOptions {
 bool sLogFSOpen                    = LOF_FS_OPEN_DEFAULT_VALUE;
 int sIntegerRangeValue             = INTEGER_RANGE_DEFAULT_VALUE;
 ExampleOptions sExampleOptionValue = MULTIPLE_VALUES_DEFAULT_VALUE;
+HttpServer server;
+bool server_made = false;
 
 /**
  * Callback that will be called if the config has been changed
