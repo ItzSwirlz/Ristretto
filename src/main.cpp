@@ -20,7 +20,7 @@
     Mandatory plugin information.
     If not set correctly, the loader will refuse to use the plugin.
 **/
-WUPS_PLUGIN_NAME("SmartEspresso")
+WUPS_PLUGIN_NAME("Ristretto")
 WUPS_PLUGIN_DESCRIPTION("home automation attempt");
 WUPS_PLUGIN_VERSION("v1.0");
 WUPS_PLUGIN_AUTHOR("ItzSwirlz");
@@ -39,7 +39,7 @@ WUPS_PLUGIN_LICENSE("BSD");
 **/
 
 WUPS_USE_WUT_DEVOPTAB();           // Use the wut devoptabs
-WUPS_USE_STORAGE("smartespresso"); // Unique id for the storage api
+WUPS_USE_STORAGE("ristretto"); // Unique id for the storage api
 
 enum ExampleOptions {
     EXAMPLE_OPTION_1 = 0,
@@ -199,6 +199,8 @@ void ConfigMenuClosedCallback() {
 }
 
 void make_server() {
+    if(!server_made) {
+        server_made = true;
     try {
 
         // Empty endpoint to allow for device discovery.
@@ -257,10 +259,12 @@ void make_server() {
     } catch (std::exception &e) {
         DEBUG_FUNCTION_LINE_INFO("got error: %s\n", e.what());
     }
+    }
 }
 
 void stop_server() {
     server.shutdown();
+    server_made = false;
 }
 
 /**
@@ -269,7 +273,7 @@ void stop_server() {
 INITIALIZE_PLUGIN() {
     // Logging only works when compiled with `make DEBUG=1`. See the README for more information.
     initLogging();
-    DEBUG_FUNCTION_LINE("Hello world! - SmartEspresso");
+    DEBUG_FUNCTION_LINE("Hello world! - Ristretto");
     try {
         std::jthread thready(make_server);
         thready.detach();
@@ -295,7 +299,6 @@ INITIALIZE_PLUGIN() {
     Gets called when the plugin will be unloaded.
 **/
 DEINITIALIZE_PLUGIN() {
-    stop_server();
     deinitLogging();
     DEBUG_FUNCTION_LINE("DEINITIALIZE_PLUGIN of example_plugin!");
 }

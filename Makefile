@@ -19,7 +19,7 @@ WUT_ROOT := $(DEVKITPRO)/wut
 # DATA is a list of directories containing data files
 # INCLUDES is a list of directories containing header files
 #-------------------------------------------------------------------------------
-TARGET		:=	SmartEspresso
+TARGET		:=	Ristretto
 BUILD		:=	build
 SOURCES		:=	src src/utils src/http
 DATA		:=	data
