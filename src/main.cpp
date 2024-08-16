@@ -1,5 +1,6 @@
 #include <cstddef>
 #include <coreinit/launch.h>
+#include <coreinit/mcp.h>
 #include <http/http.hpp>
 #include <nn/ac.h>
 #include <nn/act.h>
@@ -217,8 +218,6 @@ INITIALIZE_PLUGIN() {
     if ((storageRes = WUPSStorageAPI::SaveStorage()) != WUPS_STORAGE_ERROR_SUCCESS) {
         DEBUG_FUNCTION_LINE_ERR("GetOrStoreDefault failed: %s (%d)", WUPSStorageAPI_GetStatusStr(storageRes), storageRes);
     }
-
-    deinitLogging();
 }
 
 /**
@@ -255,6 +254,24 @@ void make_server() {
 	   OSShutdown();
         return HttpResponse{200};
     });
+
+	// Reboot the console regardless of what state it currently is in.
+	server.when("/reboot")->posted([](const HttpRequest& req) {
+	   OSForceFullRelaunch();
+		SYSLaunchMenu();
+
+        return HttpResponse{200};
+    });
+
+	// Gets the device serial number.
+	server.when("/serial")->posted([](const HttpRequest& req){
+	   MCPError handler = MCP_Open();
+       MCPSysProdSettings* settings = (MCPSysProdSettings*) malloc(sizeof(MCPSysProdSettings));
+       MCP_GetSysProdSettings(handler, settings);
+       DEBUG_FUNCTION_LINE_INFO("serial: %s", settings->serial_id);
+       MCP_Close(handler);
+       return HttpResponse{200, "text/plain", settings->serial_id};
+	});
 
 	// Launches the Wii U Menu
 	server.when("/launch/menu")->posted([](const HttpRequest& req) {
