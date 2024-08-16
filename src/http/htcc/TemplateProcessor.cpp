@@ -1,47 +1,41 @@
 
+#include <algorithm>
 #include <iomanip>
 #include <iterator>
-#include <algorithm>
 #include <regex>
 
 #include "TemplateProcessor.h"
 
-namespace
-{
-    void trim(std::string& source)
-    {
+namespace {
+    void trim(std::string &source) {
         source.erase(source.begin(), std::find_if(source.begin(), source.end(), [](char c) {
-            return !isspace(static_cast<unsigned char>(c));
-        }));
+                         return !isspace(static_cast<unsigned char>(c));
+                     }));
         source.erase(std::find_if(source.rbegin(), source.rend(), [](char c) {
-            return !isspace(static_cast<unsigned char>(c));
-        }).base(), source.end());
+                         return !isspace(static_cast<unsigned char>(c));
+                     }).base(),
+                     source.end());
     }
 
-    bool isRef(const std::string& s)
-    {
+    bool isRef(const std::string &s) {
         return s[s.length() - 1] == '&';
     }
 
-    bool isPtr(const std::string& s)
-    {
+    bool isPtr(const std::string &s) {
         return s[s.length() - 1] == '*';
     }
-}
+} // namespace
 
-void TemplateProcessor::process()
-{
+void TemplateProcessor::process() {
     mHeaderIncludes.insert("<HTMLTemplate.h>");
 
-    mInlineFlag = true;
+    mInlineFlag           = true;
     mCountinousOutputFlag = false;
 
-    while (!atEnd())
-    {
+    while (!atEnd()) {
         int c = mInStream.get();
 
-        if (c == '<' && mInStream.peek() == '%')
-        {
+        if (c == '<' && mInStream.peek() == '%') {
             mInStream.get();
             processCommand();
             continue;
@@ -54,9 +48,10 @@ void TemplateProcessor::process()
     closeOutputLine();
 
     mOutStream << "#ifndef _HTML_" << mClassName << "_HPP" << std::endl;
-    mOutStream << "#define _HTML_" << mClassName << "_HPP" << std::endl << std::endl;
+    mOutStream << "#define _HTML_" << mClassName << "_HPP" << std::endl
+               << std::endl;
 
-    for (const auto& c : mHeaderIncludes)
+    for (const auto &c : mHeaderIncludes)
         mOutStream << "#include " << c << std::endl;
 
     mOutStream << "\nnamespace templates {" << std::endl;
@@ -79,23 +74,21 @@ void TemplateProcessor::process()
     buildGetSetFunctions();
     buildMembers();
 
-    mOutStream << "};" << std::endl << "\n}\n#endif" << std::endl;
+    mOutStream << "};" << std::endl
+               << "\n}\n#endif" << std::endl;
 }
 
-void TemplateProcessor::processCommand()
-{
+void TemplateProcessor::processCommand() {
     std::stringstream ss;
 
     int modifierChar = -1;
 
-    while (true)
-    {
+    while (true) {
         if (atEnd()) throw std::runtime_error("syntax error: template command not closed");
 
         int ch = mInStream.get();
 
-        if (ch == '%' && mInStream.peek() == '>')
-        {
+        if (ch == '%' && mInStream.peek() == '>') {
             mInStream.get();
 
             while (mInStream.peek() == '\n')
@@ -104,8 +97,7 @@ void TemplateProcessor::processCommand()
             break;
         }
 
-        if (modifierChar == -1)
-        {
+        if (modifierChar == -1) {
             if (isspace(ch))
                 continue;
 
@@ -117,18 +109,16 @@ void TemplateProcessor::processCommand()
             modifierChar = 0;
         }
 
-        ss << (char)ch;
+        ss << (char) ch;
     }
 
     std::string _s = ss.str();
     trim(_s);
 
     mInlineFlag = false;
-    switch (modifierChar)
-    {
+    switch (modifierChar) {
         case '-':
-            if (flushHtmlBuffer())
-            {
+            if (flushHtmlBuffer()) {
                 mRenderCode << " << escapeHTML(" << _s << ")";
                 return;
             }
@@ -136,8 +126,7 @@ void TemplateProcessor::processCommand()
             mRenderCode << "        __result << escapeHTML(" << _s << ");" << std::endl;
             return;
         case '=':
-            if (flushHtmlBuffer())
-            {
+            if (flushHtmlBuffer()) {
                 mRenderCode << " << " << _s;
                 return;
             }
@@ -157,8 +146,7 @@ void TemplateProcessor::processCommand()
     //std::cout << "\n| command [" << _s << "], modifier [" << (char)modifierChar << "]\n\n";
 }
 
-void TemplateProcessor::interpretPreprocessorCommand(const std::string& s)
-{
+void TemplateProcessor::interpretPreprocessorCommand(const std::string &s) {
     std::vector<std::string> parts;
 
     std::istringstream iss(s);
@@ -167,8 +155,7 @@ void TemplateProcessor::interpretPreprocessorCommand(const std::string& s)
     while (getline(iss, tmp, ' '))
         parts.push_back(tmp);
 
-    if (parts[0] == "include")
-    {
+    if (parts[0] == "include") {
         std::string includeedThing = parts[1];
         trim(includeedThing);
 
@@ -186,8 +173,7 @@ void TemplateProcessor::interpretPreprocessorCommand(const std::string& s)
         return;
     }
 
-    if (parts[0] == "param")
-    {
+    if (parts[0] == "param") {
         mParameters.insert({parts[2], parts[1]});
         return;
     }
@@ -195,14 +181,13 @@ void TemplateProcessor::interpretPreprocessorCommand(const std::string& s)
     std::cout << parts.size() << std::endl;
 }
 
-bool TemplateProcessor::flushHtmlBuffer()
-{
+bool TemplateProcessor::flushHtmlBuffer() {
     if (mHtmlCode.tellp() <= 0)
         return false;
 
     if (!mCountinousOutputFlag)
         mRenderCode << "        __result";
-    
+
     mCountinousOutputFlag = true;
 
     mRenderCode << " << \"" << mHtmlCode.str() << "\"";
@@ -214,26 +199,24 @@ bool TemplateProcessor::flushHtmlBuffer()
     return true;
 }
 
-void TemplateProcessor::closeOutputLine()
-{
+void TemplateProcessor::closeOutputLine() {
     if (mCountinousOutputFlag)
         mRenderCode << ";" << std::endl;
 
     mCountinousOutputFlag = false;
 }
 
-void TemplateProcessor::buildConstructor()
-{
+void TemplateProcessor::buildConstructor() {
     if (mParameters.empty())
         return;
 
     mOutStream << "    " << mClassName << "(";
 
     bool flag = true;
-    for (const auto& x : mParameters)
-    {
+    for (const auto &x : mParameters) {
         if (!flag) mOutStream << ",";
-        else       flag = false;
+        else
+            flag = false;
 
         mOutStream << x.second << " _" << x.first;
     }
@@ -241,12 +224,13 @@ void TemplateProcessor::buildConstructor()
     mOutStream << ")";
 
     flag = true;
-    mOutStream << std::endl << "        : ";
+    mOutStream << std::endl
+               << "        : ";
 
-    for (const auto& x : mParameters)
-    {
+    for (const auto &x : mParameters) {
         if (!flag) mOutStream << ",";
-        else       flag = false;
+        else
+            flag = false;
 
         mOutStream << x.first << "(_" << x.first << ")";
     }
@@ -254,70 +238,80 @@ void TemplateProcessor::buildConstructor()
     mOutStream << " {}" << std::endl;
 }
 
-void TemplateProcessor::buildGetSetFunctions()
-{
-    for (const auto& x : mParameters)
-    {
+void TemplateProcessor::buildGetSetFunctions() {
+    for (const auto &x : mParameters) {
         mOutStream << std::endl;
 
         std::string passType = "const " + x.second + "&";
-        std::string  resType = "const " + x.second + "&";
+        std::string resType  = "const " + x.second + "&";
 
-        if (isRef(x.second) || isPtr(x.second))
-        {
+        if (isRef(x.second) || isPtr(x.second)) {
             passType = x.second;
             resType  = "const " + x.second;
         }
 
-        mOutStream << "    " << resType << " get" << (char)std::toupper(x.first[0]) << x.first.substr(1) << "() const noexcept { return " << x.first << "; }\n";
-        mOutStream << "    void set" << (char)std::toupper(x.first[0]) << x.first.substr(1) << "(" << passType << " _" << x.first << ") { " << x.first << " = _" << x.first << "; }\n";
+        mOutStream << "    " << resType << " get" << (char) std::toupper(x.first[0]) << x.first.substr(1) << "() const noexcept { return " << x.first << "; }\n";
+        mOutStream << "    void set" << (char) std::toupper(x.first[0]) << x.first.substr(1) << "(" << passType << " _" << x.first << ") { " << x.first << " = _" << x.first << "; }\n";
     }
 }
 
-void TemplateProcessor::buildMembers()
-{
+void TemplateProcessor::buildMembers() {
     if (mParameters.empty())
         return;
 
     mOutStream << "\n    protected:" << std::endl;
-    for (const auto& x : mParameters)
+    for (const auto &x : mParameters)
         mOutStream << "        " << x.second << " " << x.first << ";\n";
 }
 
 
-void TemplateProcessor::handleDefault(int ch)
-{
-    switch (ch)
-    {
-        case '\r': mHtmlCode << "\\r"; break;
+void TemplateProcessor::handleDefault(int ch) {
+    switch (ch) {
+        case '\r':
+            mHtmlCode << "\\r";
+            break;
         case '\n':
             mHtmlCode << "\\n";
 
-            if (!mInlineFlag)
-            {
+            if (!mInlineFlag) {
                 flushHtmlBuffer();
                 closeOutputLine();
             }
 
             mInlineFlag = true;
             break;
-        case '\f': mHtmlCode << "\\f"; break;
-        case '\t': mHtmlCode << "\\t"; break;
-        case '\v': mHtmlCode << "\\v"; break;
-        case '\0': mHtmlCode << "\\0"; break;
-        case '\"': mHtmlCode << "\\\""; break;
-        case '\\': mHtmlCode << "\\\\"; break;
-        case '\a': mHtmlCode << "\\a"; break;
-        case '\b': mHtmlCode << "\\b"; break;
+        case '\f':
+            mHtmlCode << "\\f";
+            break;
+        case '\t':
+            mHtmlCode << "\\t";
+            break;
+        case '\v':
+            mHtmlCode << "\\v";
+            break;
+        case '\0':
+            mHtmlCode << "\\0";
+            break;
+        case '\"':
+            mHtmlCode << "\\\"";
+            break;
+        case '\\':
+            mHtmlCode << "\\\\";
+            break;
+        case '\a':
+            mHtmlCode << "\\a";
+            break;
+        case '\b':
+            mHtmlCode << "\\b";
+            break;
 
         default:
-            if (ch > 0x7F || ch < 0x20)
-            {
+            if (ch > 0x7F || ch < 0x20) {
                 mHtmlCode << "\\x" << std::setfill('0') << std::setw(2) << std::hex << ch;
                 break;
             }
 
-            mHtmlCode << (char)ch;
+            mHtmlCode << (char) ch;
             break;
     }
 }

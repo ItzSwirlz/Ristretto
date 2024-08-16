@@ -1,18 +1,17 @@
 
 #include "http.hpp"
 
-#include <vector>
 #include <iterator>
+#include <vector>
 
 /*static*/ TCPClientStream TCPClientStream::acceptFrom(short listener) {
     struct sockaddr_in client;
     const size_t clientLen = sizeof(client);
 
     short sock = accept(
-        listener,
-        reinterpret_cast<struct sockaddr*>(&client),
-        const_cast<socklen_t*>(reinterpret_cast<const socklen_t*>(&clientLen))
-    );
+            listener,
+            reinterpret_cast<struct sockaddr *>(&client),
+            const_cast<socklen_t *>(reinterpret_cast<const socklen_t *>(&clientLen)));
 
     if (sock < 0) {
         perror("accept failed");
@@ -22,12 +21,12 @@
     return {sock};
 }
 
-void TCPClientStream::send(const void* what, size_t size) {
+void TCPClientStream::send(const void *what, size_t size) {
     if (::send(mSocket, what, size, MSG_NOSIGNAL) < 0)
         throw std::runtime_error("TCP send failed");
 }
 
-size_t TCPClientStream::receive(void* target, size_t max) {
+size_t TCPClientStream::receive(void *target, size_t max) {
     ssize_t len;
 
     if ((len = recv(mSocket, target, max, MSG_NOSIGNAL)) < 0)
@@ -71,19 +70,25 @@ bool HttpRequest::parse(std::shared_ptr<IClientStream> stream) {
         return false;
 
     std::string methodString = results[0];
-         if (methodString == "GET"    ) { mMethod = HttpRequestMethod::GET;     }
-    else if (methodString == "POST"   ) { mMethod = HttpRequestMethod::POST;    }
-    else if (methodString == "PUT"    ) { mMethod = HttpRequestMethod::PUT;     }
-    else if (methodString == "DELETE" ) { mMethod = HttpRequestMethod::DELETE;  }
-    else if (methodString == "OPTIONS") { mMethod = HttpRequestMethod::OPTIONS; }
-    else return false;
+    if (methodString == "GET") {
+        mMethod = HttpRequestMethod::GET;
+    } else if (methodString == "POST") {
+        mMethod = HttpRequestMethod::POST;
+    } else if (methodString == "PUT") {
+        mMethod = HttpRequestMethod::PUT;
+    } else if (methodString == "DELETE") {
+        mMethod = HttpRequestMethod::DELETE;
+    } else if (methodString == "OPTIONS") {
+        mMethod = HttpRequestMethod::OPTIONS;
+    } else
+        return false;
 
     path = results[1];
 
     size_t question = path.find("?");
     if (question != std::string::npos) {
         query = path.substr(question);
-        path = path.substr(0, question);
+        path  = path.substr(0, question);
     }
 
     if (query.empty())
@@ -100,41 +105,40 @@ bool HttpRequest::parse(std::shared_ptr<IClientStream> stream) {
         if (sep == std::string::npos || sep == 0)
             return false;
 
-        std::string key = line.substr(0, sep), val = line.substr(sep+2);
+        std::string key = line.substr(0, sep), val = line.substr(sep + 2);
         (*this)[key] = val;
         //std::cout << "HEADER: <" << key << "> set to <" << val << ">" << std::endl;
     }
 
     std::string contentLength = (*this)["Content-Length"];
-    ssize_t cl = std::atoll(contentLength.c_str());
+    ssize_t cl                = std::atoll(contentLength.c_str());
 
     if (cl > MAX_HTTP_CONTENT_SIZE)
         throw std::runtime_error("request too large");
 
     if (cl > 0) {
-        char* tmp = new char[cl];
+        char *tmp = new char[cl];
         bzero(tmp, cl);
         stream->receive(tmp, cl);
 
         mContent = std::string(tmp, cl);
         delete[] tmp;
 
-        #ifdef TINYHTTP_JSON
-        if (    (*this)["Content-Type"] == "application/json"
-            ||  (*this)["Content-Type"].rfind("application/json;",0) == 0 // some clients gives us extra data like charset
+#ifdef TINYHTTP_JSON
+        if ((*this)["Content-Type"] == "application/json" || (*this)["Content-Type"].rfind("application/json;", 0) == 0 // some clients gives us extra data like charset
         ) {
             std::string error;
             mContentJson = miniJson::Json::parse(mContent, error);
             if (!error.empty())
                 std::cerr << "Content type was JSON but we couldn't parse it! " << error << std::endl;
         }
-        #endif
+#endif
     }
 
     return true;
 }
 
-/*static*/ bool HttpHandlerBuilder::isSafeFilename(const std::string& name, bool allowSlash) {
+/*static*/ bool HttpHandlerBuilder::isSafeFilename(const std::string &name, bool allowSlash) {
     static const char allowedChars[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-+@";
     for (auto x : name) {
         if (x == '/' && !allowSlash)
@@ -154,16 +158,16 @@ bool HttpRequest::parse(std::shared_ptr<IClientStream> stream) {
     static std::map<std::string, std::string> mMimeDatabase;
 
     if (mMimeDatabase.empty()) {
-        mMimeDatabase.insert({"js",   "application/javascript"});
-        mMimeDatabase.insert({"pdf",  "application/pdf"});
-        mMimeDatabase.insert({"gz",   "application/gzip"});
-        mMimeDatabase.insert({"xml",  "application/xml"});
+        mMimeDatabase.insert({"js", "application/javascript"});
+        mMimeDatabase.insert({"pdf", "application/pdf"});
+        mMimeDatabase.insert({"gz", "application/gzip"});
+        mMimeDatabase.insert({"xml", "application/xml"});
         mMimeDatabase.insert({"html", "text/html"});
-        mMimeDatabase.insert({"htm",  "text/html"});
-        mMimeDatabase.insert({"css",  "text/css"});
-        mMimeDatabase.insert({"txt",  "text/plain"});
-        mMimeDatabase.insert({"png",  "image/png"});
-        mMimeDatabase.insert({"jpg",  "image/jpeg"});
+        mMimeDatabase.insert({"htm", "text/html"});
+        mMimeDatabase.insert({"css", "text/css"});
+        mMimeDatabase.insert({"txt", "text/plain"});
+        mMimeDatabase.insert({"png", "image/png"});
+        mMimeDatabase.insert({"jpg", "image/jpeg"});
         mMimeDatabase.insert({"jpeg", "image/jpeg"});
         mMimeDatabase.insert({"json", "application/json"});
     }
@@ -172,19 +176,19 @@ bool HttpRequest::parse(std::shared_ptr<IClientStream> stream) {
     if (pos == std::string::npos)
         return "application/octet-stream";
 
-    auto f = mMimeDatabase.find(name.substr(pos+1));
+    auto f = mMimeDatabase.find(name.substr(pos + 1));
     if (f == mMimeDatabase.end())
         return "application/octet-stream";
 
     return f->second;
 }
 
-HttpServer::Processor::Processor(std::shared_ptr<IClientStream> stream, HttpServer& owner)
+HttpServer::Processor::Processor(std::shared_ptr<IClientStream> stream, HttpServer &owner)
     : mClientStream{std::move(stream)}, mOwner{owner}, mLastActive{std::chrono::system_clock::now()},
-      mIsAlive{true}, mHasHandover{false} { }
+      mIsAlive{true}, mHasHandover{false} {}
 
 /* static */ void HttpServer::Processor::clientThreadProc(std::shared_ptr<Processor> self) {
-    ICanRequestProtocolHandover* handover = nullptr;
+    ICanRequestProtocolHandover *handover = nullptr;
     std::unique_ptr<HttpRequest> handoverRequest;
 
     try {
@@ -205,9 +209,9 @@ HttpServer::Processor::Processor(std::shared_ptr<IClientStream> stream, HttpServ
 
             auto res = self->mOwner.processRequest(req.getPath(), req);
             if (res) {
-                #ifndef TINYHTTP_ALLOW_KEEPALIVE
+#ifndef TINYHTTP_ALLOW_KEEPALIVE
                 (*res)["Connection"] = "close";
-                #endif
+#endif
 
                 auto builtMessage = res->buildMessage();
                 self->mClientStream->send(builtMessage);
@@ -222,15 +226,15 @@ HttpServer::Processor::Processor(std::shared_ptr<IClientStream> stream, HttpServ
 
             self->mClientStream->send(self->mOwner.mDefault404Message);
 
-            keep_alive_check:
+        keep_alive_check:
             self->mLastActive = std::chrono::system_clock::now();
-            
-            #ifdef TINYHTTP_ALLOW_KEEPALIVE
+
+#ifdef TINYHTTP_ALLOW_KEEPALIVE
             if (req["Connection"] != "keep-alive")
                 break;
-            #else
+#else
             break;
-            #endif
+#endif
         }
 
         if (handover) {
@@ -239,7 +243,7 @@ HttpServer::Processor::Processor(std::shared_ptr<IClientStream> stream, HttpServ
             handover->acceptHandover(self->mOwner.mSocket, *self->mClientStream.get(), std::move(handoverRequest));
             puts("Handover proc exited");
         }
-    } catch (std::exception& e) {
+    } catch (std::exception &e) {
         // Don't print the exception when we are getting shut down, it's expected to be raised
         if (self->isAlive()) {
             std::cerr << "Exception in HTTP client handler (" << e.what() << ")\n";
@@ -264,19 +268,19 @@ bool HttpServer::Processor::isTimedOut() const noexcept {
 }
 
 void HttpServer::Processor::shutdown() {
-    #ifdef TINYHTTP_THREADING
+#ifdef TINYHTTP_THREADING
     std::unique_lock{mShutdownMutex};
-    #endif
+#endif
 
     mIsAlive = false;
-    
+
     if (mClientStream && mClientStream->isOpen())
         mClientStream->close();
 
-    #ifdef TINYHTTP_THREADING
+#ifdef TINYHTTP_THREADING
     if (mWorkThread && mWorkThread->joinable())
         mWorkThread->detach();
-    #endif
+#endif
 }
 
 #ifdef TINYHTTP_THREADING
@@ -293,10 +297,10 @@ void HttpServer::cleanupThreadProc() {
 
         if (mSocket == -1)
             continue;
-        
+
         mRequestProcessorListMutex.lock();
         for (auto it = mRequestProcessors.begin(); it != mRequestProcessors.end(); ++it) {
-            auto& processor = *it;
+            auto &processor = *it;
 
             if (processor->isTimedOut()) {
                 processor->shutdown();
@@ -316,9 +320,9 @@ HttpServer::HttpServer() {
     mDefault404Message = HttpResponse{404, "text/plain", "404 not found"}.buildMessage();
     mDefault400Message = HttpResponse{400, "text/plain", "400 bad request"}.buildMessage();
 
-    #ifdef TINYHTTP_THREADING
+#ifdef TINYHTTP_THREADING
     mCleanupThread.reset(new std::thread{[this]() { this->cleanupThreadProc(); }});
-    #endif
+#endif
 }
 
 void HttpServer::startListening(uint16_t port) {
@@ -338,22 +342,23 @@ void HttpServer::startListening(uint16_t port) {
 
     struct sockaddr_in remote = {};
 
-    remote.sin_family = AF_INET;
+    remote.sin_family      = AF_INET;
     remote.sin_addr.s_addr = htonl(INADDR_ANY);
-    remote.sin_port = htons(port);
+    remote.sin_port        = htons(port);
     int iRetval;
 
     while (true) {
-        iRetval = bind(mSocket, reinterpret_cast<struct sockaddr*>(&remote), sizeof(remote));
+        iRetval = bind(mSocket, reinterpret_cast<struct sockaddr *>(&remote), sizeof(remote));
 
         if (iRetval < 0) {
             perror("Failed to bind socket, retrying in 5 seconds...");
-            #ifdef TINYHTTP_THREADING
+#ifdef TINYHTTP_THREADING
             std::this_thread::sleep_for(std::chrono::seconds(5));
-            #else
+#else
             usleep(5000 * 1000);
-            #endif
-        } else break;
+#endif
+        } else
+            break;
     }
 
     iRetval = ::listen(mSocket, 3);
@@ -363,20 +368,19 @@ void HttpServer::startListening(uint16_t port) {
     printf("Waiting for incoming connections...\n");
     while (mSocket != -1) {
         auto processor = std::make_shared<Processor>(
-            std::make_shared<TCPClientStream>(TCPClientStream::acceptFrom(mSocket)),
-            *this
-        );
+                std::make_shared<TCPClientStream>(TCPClientStream::acceptFrom(mSocket)),
+                *this);
 
-        #ifdef TINYHTTP_THREADING
+#ifdef TINYHTTP_THREADING
         processor->startThread();
 
         mRequestProcessorListMutex.lock();
         mRequestProcessors.push_back(std::move(processor));
         mRequestProcessorListMutex.unlock();
-        #else
+#else
         mCurrentProcessor = processor;
         Processor::clientThreadProc(processor);
-        #endif
+#endif
     }
 
     puts("Listen loop exited");
@@ -388,21 +392,21 @@ void HttpServer::shutdown() {
     if (mSocket < 0) {
         return;
     }
-    
+
     mSocket = -1;
 
     puts("Shutting down server");
     ::shutdown(sock, SHUT_RDWR);
 
-    #ifdef TINYHTTP_THREADING
+#ifdef TINYHTTP_THREADING
     mRequestProcessorListMutex.lock();
     mRequestProcessors.clear();
     mRequestProcessorListMutex.unlock();
-    #else
+#else
     if (mCurrentProcessor) {
         mCurrentProcessor->shutdown();
     }
-    #endif
+#endif
 
     close(sock);
 }

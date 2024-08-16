@@ -1,14 +1,14 @@
-#include <cstddef>
+#include "utils/logger.h"
+#include <coreinit/filesystem.h>
 #include <coreinit/launch.h>
 #include <coreinit/mcp.h>
+#include <coreinit/thread.h>
+#include <cstddef>
 #include <http/http.hpp>
+#include <malloc.h>
 #include <nn/ac.h>
 #include <nn/act.h>
 #include <sysapp/launch.h>
-#include <coreinit/thread.h>
-#include "utils/logger.h"
-#include <coreinit/filesystem.h>
-#include <malloc.h>
 #include <wups.h>
 #include <wups/config/WUPSConfigItemBoolean.h>
 #include <wups/config/WUPSConfigItemIntegerRange.h>
@@ -38,7 +38,7 @@ WUPS_PLUGIN_LICENSE("BSD");
 
 **/
 
-WUPS_USE_WUT_DEVOPTAB();                // Use the wut devoptabs
+WUPS_USE_WUT_DEVOPTAB();           // Use the wut devoptabs
 WUPS_USE_STORAGE("smartespresso"); // Unique id for the storage api
 
 enum ExampleOptions {
@@ -200,75 +200,61 @@ void ConfigMenuClosedCallback() {
 
 void make_server() {
     try {
-    // nn::ac::Initialize ();
-	// nn::ac::ConnectAsync ();
-	// nn::act::Initialize ();
-	// pulled from ftpiiu
-			// for (int32_t i = 0; i < 13; i++)
-			// {
-			// 	if (!nn::act::IsSlotOccupied (i))
-			// 	{
-			// 		continue;
-			// 	}
-			// 	char buffer[9];
-			// 	snprintf (buffer, sizeof (buffer), "%08X", nn::act::GetPersistentIdEx (i));
-			// }
-			// nn::act::Finalize ();
-	messages.push_back("Test message");
-	// Empty endpoint to allow for device discovery.
-	server.when("/")->posted([](const HttpRequest& req) {
-        return HttpResponse{200};
-    });
 
-	// Shutsdown the console regardless of what state it currently is in.
-	server.when("/shutdown")->posted([](const HttpRequest& req) {
-	   OSShutdown();
-        return HttpResponse{200};
-    });
+        // Empty endpoint to allow for device discovery.
+        server.when("/")->posted([](const HttpRequest &req) {
+            return HttpResponse{200};
+        });
 
-	// Reboot the console regardless of what state it currently is in.
-	server.when("/reboot")->posted([](const HttpRequest& req) {
-	   OSForceFullRelaunch();
-		SYSLaunchMenu();
+        // Shutsdown the console regardless of what state it currently is in.
+        server.when("/shutdown")->posted([](const HttpRequest &req) {
+            OSShutdown();
+            return HttpResponse{200};
+        });
 
-        return HttpResponse{200};
-    });
+        // Reboot the console regardless of what state it currently is in.
+        server.when("/reboot")->posted([](const HttpRequest &req) {
+            OSForceFullRelaunch();
+            SYSLaunchMenu();
 
-	// Gets the device serial number.
-	server.when("/serial")->posted([](const HttpRequest& req){
-	   // Credit to .danielko on Discord
-	   int handle = MCP_Open();
-	   if (handle < 0) { // some error?
-		throw std::runtime_error{"MCP_Open() failed with error " + std::to_string(handle)};
-	   }
-	   MCPSysProdSettings settings alignas(0x40);
-	   MCPError error = MCP_GetSysProdSettings(handle, &settings);
-       MCP_Close(handle);
-       if (error) {
-           DEBUG_FUNCTION_LINE_ERR("Error at MCP_GetSysProdSettings");
-           return HttpResponse{500, "text/plain", "Couldn't get the serial!"};
-       }
-       DEBUG_FUNCTION_LINE_INFO("Obtained serial: %s", settings.serial_id);
-       return HttpResponse{200, "text/plain", settings.serial_id};
-	});
+            return HttpResponse{200};
+        });
 
-	// Launches the Wii U Menu
-	server.when("/launch/menu")->posted([](const HttpRequest& req) {
-	   // FIXME: May lock up when the plugin is inactive, like in friends list
-	   SYSLaunchMenu();
-       return HttpResponse{200};
-    });
+        // Gets the device serial number.
+        server.when("/serial")->posted([](const HttpRequest &req) {
+            // Credit to .danielko on Discord
+            int handle = MCP_Open();
+            if (handle < 0) { // some error?
+                throw std::runtime_error{"MCP_Open() failed with error " + std::to_string(handle)};
+            }
+            MCPSysProdSettings settings alignas(0x40);
+            MCPError error = MCP_GetSysProdSettings(handle, &settings);
+            MCP_Close(handle);
+            if (error) {
+                DEBUG_FUNCTION_LINE_ERR("Error at MCP_GetSysProdSettings");
+                return HttpResponse{500, "text/plain", "Couldn't get the serial!"};
+            }
+            DEBUG_FUNCTION_LINE_INFO("Obtained serial: %s", settings.serial_id);
+            return HttpResponse{200, "text/plain", settings.serial_id};
+        });
 
-	// Launches the current title's manual
-	server.when("/launch/emanual")->posted([](const HttpRequest& req) {
-	   // FIXME: If the title has no manual, DO NOT SWITCH!!!! IT WILL LOCKUP THE SYSTEM! (eg Friends List)
-	   SYSSwitchToEManual();
-       return HttpResponse{200};
-    });
+        // Launches the Wii U Menu
+        server.when("/launch/menu")->posted([](const HttpRequest &req) {
+            // FIXME: May lock up when the plugin is inactive, like in friends list
+            SYSLaunchMenu();
+            return HttpResponse{200};
+        });
 
-	// TODO: Make the port configurable
-	server.startListening(8572);
-    } catch(std::exception& e) {
+        // Launches the current title's manual
+        server.when("/launch/emanual")->posted([](const HttpRequest &req) {
+            // FIXME: If the title has no manual, DO NOT SWITCH!!!! IT WILL LOCKUP THE SYSTEM! (eg Friends List)
+            SYSSwitchToEManual();
+            return HttpResponse{200};
+        });
+
+        // TODO: Make the port configurable
+        server.startListening(8572);
+    } catch (std::exception &e) {
         DEBUG_FUNCTION_LINE_INFO("got error: %s\n", e.what());
     }
 }
@@ -284,10 +270,10 @@ INITIALIZE_PLUGIN() {
     // Logging only works when compiled with `make DEBUG=1`. See the README for more information.
     initLogging();
     DEBUG_FUNCTION_LINE("Hello world! - SmartEspresso");
-	try {
+    try {
         std::jthread thready(make_server);
         thready.detach();
-    } catch(std::exception& e) {
+    } catch (std::exception &e) {
         DEBUG_FUNCTION_LINE_INFO("got error: %s\n", e.what());
     }
 
@@ -309,8 +295,8 @@ INITIALIZE_PLUGIN() {
     Gets called when the plugin will be unloaded.
 **/
 DEINITIALIZE_PLUGIN() {
-	stop_server();
-	deinitLogging();
+    stop_server();
+    deinitLogging();
     DEBUG_FUNCTION_LINE("DEINITIALIZE_PLUGIN of example_plugin!");
 }
 

@@ -1,21 +1,18 @@
 
-#include <fstream>
 #include <cstring>
+#include <fstream>
 
 #include "TemplateProcessor.h"
 
-int main(int argc, char const *argv[])
-{
-    if (argc != 2 && argc != 3)
-    {
+int main(int argc, char const *argv[]) {
+    if (argc != 2 && argc != 3) {
         puts("Usage: htcc <input file> [output file]");
         exit(EXIT_FAILURE);
     }
 
     std::ifstream infile(argv[1]);
 
-    if (!infile.is_open())
-    {
+    if (!infile.is_open()) {
         perror("Could not open input file");
         exit(EXIT_FAILURE);
     }
@@ -37,21 +34,18 @@ int main(int argc, char const *argv[])
     }
 
     bool uppercaseFlag = true;
-    for (size_t i = start; i < len; i++)
-    {
+    for (size_t i = start; i < len; i++) {
         char c = argv[1][i];
 
-        if (c == '.')
-        {
-            if (strstr(&argv[1][i+1], ".") == NULL)
+        if (c == '.') {
+            if (strstr(&argv[1][i + 1], ".") == NULL)
                 break;
-            
+
             uppercaseFlag = true;
             continue;
         }
 
-        if (isspace(c))
-        {
+        if (isspace(c)) {
             uppercaseFlag = true;
             continue;
         }
@@ -61,11 +55,10 @@ int main(int argc, char const *argv[])
 
         if (i == 0 && isdigit(c))
             className += '_';
-        
-        if (isalpha(c) && uppercaseFlag)
-        {
+
+        if (isalpha(c) && uppercaseFlag) {
             uppercaseFlag = false;
-            className += (char)toupper(c);
+            className += (char) toupper(c);
             continue;
         }
 
@@ -74,12 +67,10 @@ int main(int argc, char const *argv[])
 
     className += "Template";
 
-    if (argc == 3)
-    {
+    if (argc == 3) {
         std::ofstream outfile(argv[2]);
 
-        if (!outfile.is_open())
-        {
+        if (!outfile.is_open()) {
             perror("Could not open input file");
             exit(EXIT_FAILURE);
         }
