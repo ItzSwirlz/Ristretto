@@ -198,35 +198,6 @@ void ConfigMenuClosedCallback() {
     WUPSStorageAPI::SaveStorage();
 }
 
-/**
-    Gets called ONCE when the plugin was loaded.
-**/
-INITIALIZE_PLUGIN() {
-    // Logging only works when compiled with `make DEBUG=1`. See the README for more information.
-    initLogging();
-    DEBUG_FUNCTION_LINE("INITIALIZE_PLUGIN of example_plugin!");
-
-    WUPSConfigAPIOptionsV1 configOptions = {.name = "example_plugin_cpp"};
-    if (WUPSConfigAPI_Init(configOptions, ConfigMenuOpenedCallback, ConfigMenuClosedCallback) != WUPSCONFIG_API_RESULT_SUCCESS) {
-        DEBUG_FUNCTION_LINE_ERR("Failed to init config api");
-    }
-
-    WUPSStorageError storageRes;
-    if ((storageRes = WUPSStorageAPI::GetOrStoreDefault(LOG_FS_OPEN_CONFIG_ID, sLogFSOpen, LOF_FS_OPEN_DEFAULT_VALUE)) != WUPS_STORAGE_ERROR_SUCCESS) {
-        DEBUG_FUNCTION_LINE_ERR("GetOrStoreDefault failed: %s (%d)", WUPSStorageAPI_GetStatusStr(storageRes), storageRes);
-    }
-    if ((storageRes = WUPSStorageAPI::SaveStorage()) != WUPS_STORAGE_ERROR_SUCCESS) {
-        DEBUG_FUNCTION_LINE_ERR("GetOrStoreDefault failed: %s (%d)", WUPSStorageAPI_GetStatusStr(storageRes), storageRes);
-    }
-}
-
-/**
-    Gets called when the plugin will be unloaded.
-**/
-DEINITIALIZE_PLUGIN() {
-    DEBUG_FUNCTION_LINE("DEINITIALIZE_PLUGIN of example_plugin!");
-}
-
 void make_server() {
     try {
     // nn::ac::Initialize ();
@@ -265,28 +236,37 @@ void make_server() {
 
 	// Gets the device serial number.
 	server.when("/serial")->posted([](const HttpRequest& req){
-	   MCPError handler = MCP_Open();
-       MCPSysProdSettings* settings = (MCPSysProdSettings*) malloc(sizeof(MCPSysProdSettings));
-       MCP_GetSysProdSettings(handler, settings);
-       DEBUG_FUNCTION_LINE_INFO("serial: %s", settings->serial_id);
-       MCP_Close(handler);
-       return HttpResponse{200, "text/plain", settings->serial_id};
+	   // Credit to .danielko on Discord
+	   int handle = MCP_Open();
+	   if (handle < 0) { // some error?
+		throw std::runtime_error{"MCP_Open() failed with error " + std::to_string(handle)};
+	   }
+	   MCPSysProdSettings settings alignas(0x40);
+	   MCPError error = MCP_GetSysProdSettings(handle, &settings);
+       MCP_Close(handle);
+       if (error) {
+           DEBUG_FUNCTION_LINE_ERR("Error at MCP_GetSysProdSettings");
+           return HttpResponse{500, "text/plain", "Couldn't get the serial!"};
+       }
+       DEBUG_FUNCTION_LINE_INFO("Obtained serial: %s", settings.serial_id);
+       return HttpResponse{200, "text/plain", settings.serial_id};
 	});
 
 	// Launches the Wii U Menu
 	server.when("/launch/menu")->posted([](const HttpRequest& req) {
 	   // FIXME: May lock up when the plugin is inactive, like in friends list
 	   SYSLaunchMenu();
-        return HttpResponse{200};
+       return HttpResponse{200};
     });
 
 	// Launches the current title's manual
 	server.when("/launch/emanual")->posted([](const HttpRequest& req) {
 	   // FIXME: If the title has no manual, DO NOT SWITCH!!!! IT WILL LOCKUP THE SYSTEM! (eg Friends List)
 	   SYSSwitchToEManual();
-        return HttpResponse{200};
+       return HttpResponse{200};
     });
 
+	// TODO: Make the port configurable
 	server.startListening(8572);
     } catch(std::exception& e) {
         DEBUG_FUNCTION_LINE_INFO("got error: %s\n", e.what());
@@ -298,30 +278,57 @@ void stop_server() {
 }
 
 /**
-    Gets called when an application starts.
+    Gets called ONCE when the plugin was loaded.
 **/
-ON_APPLICATION_START() {
+INITIALIZE_PLUGIN() {
+    // Logging only works when compiled with `make DEBUG=1`. See the README for more information.
     initLogging();
-    try {
+    DEBUG_FUNCTION_LINE("Hello world! - SmartEspresso");
+	try {
         std::jthread thready(make_server);
         thready.detach();
     } catch(std::exception& e) {
         DEBUG_FUNCTION_LINE_INFO("got error: %s\n", e.what());
     }
-    DEBUG_FUNCTION_LINE("ON_APPLICATION_START of example_plugin!");
+
+    WUPSConfigAPIOptionsV1 configOptions = {.name = "example_plugin_cpp"};
+    if (WUPSConfigAPI_Init(configOptions, ConfigMenuOpenedCallback, ConfigMenuClosedCallback) != WUPSCONFIG_API_RESULT_SUCCESS) {
+        DEBUG_FUNCTION_LINE_ERR("Failed to init config api");
+    }
+
+    WUPSStorageError storageRes;
+    if ((storageRes = WUPSStorageAPI::GetOrStoreDefault(LOG_FS_OPEN_CONFIG_ID, sLogFSOpen, LOF_FS_OPEN_DEFAULT_VALUE)) != WUPS_STORAGE_ERROR_SUCCESS) {
+        DEBUG_FUNCTION_LINE_ERR("GetOrStoreDefault failed: %s (%d)", WUPSStorageAPI_GetStatusStr(storageRes), storageRes);
+    }
+    if ((storageRes = WUPSStorageAPI::SaveStorage()) != WUPS_STORAGE_ERROR_SUCCESS) {
+        DEBUG_FUNCTION_LINE_ERR("GetOrStoreDefault failed: %s (%d)", WUPSStorageAPI_GetStatusStr(storageRes), storageRes);
+    }
+}
+
+/**
+    Gets called when the plugin will be unloaded.
+**/
+DEINITIALIZE_PLUGIN() {
+	stop_server();
+	deinitLogging();
+    DEBUG_FUNCTION_LINE("DEINITIALIZE_PLUGIN of example_plugin!");
+}
+
+/**
+    Gets called when an application starts.
+**/
+ON_APPLICATION_START() {
+    initLogging();
 }
 
 /**
  * Gets called when an application actually ends
  */
-ON_APPLICATION_ENDS() {
-    deinitLogging();
-    stop_server();
-}
+//ON_APPLICATION_ENDS() {}
 
 /**
     Gets called when an application request to exit.
 **/
-ON_APPLICATION_REQUESTS_EXIT() {
-    DEBUG_FUNCTION_LINE_INFO("ON_APPLICATION_REQUESTS_EXIT of example_plugin!");
-}
+//ON_APPLICATION_REQUESTS_EXIT() {
+//    DEBUG_FUNCTION_LINE_INFO("ON_APPLICATION_REQUESTS_EXIT of example_plugin!");
+//}
