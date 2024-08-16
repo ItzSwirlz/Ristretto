@@ -1,9 +1,8 @@
-# Example plugin
+# Ristretto
 
-This is just a simple example plugin which can be used as a template.
-The plugin logs the FSOpenFile calls via UDP (**Only when build via `make DEBUG=1`**).
+Ristretto is a plugin for Aroma that provides a foundation for smart home automation on the Wii U with a HTTP server. This will allow for other devices to communicate with the Wii U, and can then be used with something like [homebridge-wiiu](https://github.com/ItzSwirlz/homebridge-wiiu) to be added to existing home automation software.
 
-The logging can be enabled/disabled via the WUPS Config menu (press L, DPAD Down and Minus on the GamePad, Pro Controller or Classic Controller).
+Currently, it is still a work-in-progress. This code is currently made specifically for my setup and will eventually be generalized.
 
 ## Installation
 
@@ -31,8 +30,8 @@ Then you should be able to compile via `make` (with no logging) or `make DEBUG=1
 
 Building via `make` only logs errors (via OSReport). To enable logging via the [LoggingModule](https://github.com/wiiu-env/LoggingModule) set `DEBUG` to `1` or `VERBOSE`.
 
-`make` Logs errors only (via OSReport).  
-`make DEBUG=1` Enables information and error logging via [LoggingModule](https://github.com/wiiu-env/LoggingModule).  
+`make` Logs errors only (via OSReport).
+`make DEBUG=1` Enables information and error logging via [LoggingModule](https://github.com/wiiu-env/LoggingModule).
 `make DEBUG=VERBOSE` Enables verbose information and error logging via [LoggingModule](https://github.com/wiiu-env/LoggingModule).
 
 If the [LoggingModule](https://github.com/wiiu-env/LoggingModule) is not present, it'll fallback to UDP (Port 4405) and [CafeOS](https://github.com/wiiu-env/USBSerialLoggingModule) logging.
@@ -45,7 +44,7 @@ It's possible to use a docker image for building. This way you don't need anythi
 # Build docker image (only needed once)
 docker build . -t example-plugin-builder
 
-# make 
+# make
 docker run -it --rm -v ${PWD}:/project example-plugin-builder make DEBUG=1
 
 # make clean
