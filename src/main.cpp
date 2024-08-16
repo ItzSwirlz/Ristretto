@@ -281,7 +281,7 @@ INITIALIZE_PLUGIN() {
         DEBUG_FUNCTION_LINE_INFO("got error: %s\n", e.what());
     }
 
-    WUPSConfigAPIOptionsV1 configOptions = {.name = "example_plugin_cpp"};
+    WUPSConfigAPIOptionsV1 configOptions = {.name = "Ristretto"};
     if (WUPSConfigAPI_Init(configOptions, ConfigMenuOpenedCallback, ConfigMenuClosedCallback) != WUPSCONFIG_API_RESULT_SUCCESS) {
         DEBUG_FUNCTION_LINE_ERR("Failed to init config api");
     }
