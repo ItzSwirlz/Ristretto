@@ -33,6 +33,10 @@ CFLAGS	:=	-g -Wall -O2 -ffunction-sections \
 
 CFLAGS	+=	$(INCLUDE) -D__WIIU__ -D__WUT__ -D__WUPS__
 
+ifeq ($(DEBUG),1)
+	CFLAGS += -DDEBUG -g
+endif
+
 CXXFLAGS	:= $(CFLAGS) -std=c++23
 
 ASFLAGS	:=	-g $(ARCH)

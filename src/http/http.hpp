@@ -58,7 +58,6 @@
 #include <regex>
 #include <stdexcept>
 #include <string>
-#include <sys/endian.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -75,6 +74,9 @@
 #ifdef TINYHTTP_TEMPLATES
 #include "htcc/HTMLTemplate.h"
 #endif
+
+// use custom endian.h for wii u
+#include "utils/endian.h"
 
 enum class HttpRequestMethod { GET,
                                POST,
