@@ -207,7 +207,8 @@ INITIALIZE_PLUGIN() {
 
 // Gets called when the plugin will be unloaded.
 DEINITIALIZE_PLUGIN() {
+    stop_server();
+    DEBUG_FUNCTION_LINE("Ristretto deinitializing.");
     WHBLogUdpDeinit();
     WHBLogCafeDeinit();
-    DEBUG_FUNCTION_LINE("Ristretto deinitializing.");
 }
