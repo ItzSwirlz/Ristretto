@@ -3,13 +3,15 @@
 #include <coreinit/debug.h>
 #include <string.h>
 #include <whb/log.h>
+#include <whb/log_cafe.h>
+#include <whb/log_udp.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define LOG_APP_TYPE "P"
-#define LOG_APP_NAME "ExamplePlugin"
+#define LOG_APP_NAME "Ristretto"
 
 #define __FILENAME__ ({                                \
     const char *__filename = __FILE__;                 \
@@ -64,10 +66,6 @@ extern "C" {
 #define DEBUG_FUNCTION_LINE_ERR_LAMBDA(FILENAME, FUNCTION, LINE, FMT, ARGS...) LOG_EX(FILENAME, FUNCTION, LINE, OSReport, "##ERROR## ", "\n", FMT, ##ARGS);
 
 #endif
-
-void initLogging();
-
-void deinitLogging();
 
 #ifdef __cplusplus
 }

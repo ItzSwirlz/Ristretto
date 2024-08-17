@@ -35,13 +35,6 @@ WUPS_PLUGIN_LICENSE("BSD");
 WUPS_USE_WUT_DEVOPTAB();           // Use the wut devoptabs
 WUPS_USE_STORAGE("ristretto"); // Unique id for the storage api
 
-enum ExampleOptions {
-    EXAMPLE_OPTION_1 = 0,
-    EXAMPLE_OPTION_2 = 1,
-    EXAMPLE_OPTION_3 = 2,
-};
-
-
 HttpServer server;
 bool server_made = false;
 static std::vector<std::string> messages;
@@ -56,7 +49,8 @@ void make_server() {
 		return;
     }
 	
-    server_made = true;
+    server_made = true;	
+	DEBUG_FUNCTION_LINE("Server started.");
 	
 	try {
 
@@ -125,6 +119,7 @@ void make_server() {
 void stop_server() {
     server.shutdown();
     server_made = false;
+	DEBUG_FUNCTION_LINE("Server shut down.");
 }
 
 void make_server_on_thread() {
@@ -172,7 +167,9 @@ void ConfigMenuClosedCallback() {
 // Gets called ONCE when the plugin was loaded.
 INITIALIZE_PLUGIN() {
     // Logging only works when compiled with `make DEBUG=1`. See the README for more information.
-    initLogging();
+    WHBLogCafeInit();
+	WHBLogUdpInit();
+	
     DEBUG_FUNCTION_LINE("Hello world! - Ristretto");
 
     WUPSConfigAPIOptionsV1 configOptions = {.name = "Ristretto"};
@@ -194,6 +191,7 @@ INITIALIZE_PLUGIN() {
 
 // Gets called when the plugin will be unloaded.
 DEINITIALIZE_PLUGIN() {
-    deinitLogging();
+    WHBLogUdpDeinit();
+	WHBLogCafeDeinit();
     DEBUG_FUNCTION_LINE("Ristretto deinitializing.");
 }
