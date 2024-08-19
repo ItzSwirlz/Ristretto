@@ -6,9 +6,7 @@
 
 
 // json support (Currently uses MiniJson)
-//
-// -------- disabling for smartespresso. ----------
-// #define TINYHTTP_JSON
+#define TINYHTTP_JSON
 
 // websocket support
 #define TINYHTTP_WS
@@ -68,7 +66,7 @@
 #endif
 
 #ifdef TINYHTTP_JSON
-#include <json.h>
+#include "json.h"
 #endif
 
 #ifdef TINYHTTP_TEMPLATES
