@@ -95,6 +95,26 @@ void make_server() {
             return HttpResponse{200, "text/plain", settings.serial_id};
         });
 
+        // Gets the device model
+        server.when("/model")->requested([](const HttpRequest &req) {
+            // Credit to .danielko on Discord
+            int handle = MCP_Open();
+            if (handle < 0) { // some error?
+                throw std::runtime_error{"MCP_Open() failed with error " + std::to_string(handle)};
+            }
+
+            MCPSysProdSettings settings alignas(0x40);
+            MCPError error = MCP_GetSysProdSettings(handle, &settings);
+            MCP_Close(handle);
+            if (error) {
+                DEBUG_FUNCTION_LINE_ERR("Error at MCP_GetSysProdSettings");
+                return HttpResponse{500, "text/plain", "Couldn't get the model number!"};
+            }
+
+            DEBUG_FUNCTION_LINE_INFO("Obtained model number: %s", settings.model_number);
+            return HttpResponse{200, "text/plain", settings.model_number};
+        });
+
         // Gets the device version.
         server.when("/system_version")->requested([](const HttpRequest &req) {
             int handle = MCP_Open();
@@ -113,13 +133,7 @@ void make_server() {
             }
 
             // DEBUG_FUNCTION_LINE_INFO("Obtained version: %d . %d . %d%s", version->major, version->minor, version->patch, version->region);
-            std::string ret = "";
-            ret.append(std::to_string(version->major));
-            ret.append(".");
-            ret.append(std::to_string(version->minor));
-            ret.append(".");
-            ret.append(std::to_string(version->patch));
-            ret.append("" + version->region);
+            std::string ret = std::format("{:d}.{:d}.{:d}{}", version->major, version->minor, version->patch, version->region);
             return HttpResponse{200, "text/plain", ret};
         });
 
