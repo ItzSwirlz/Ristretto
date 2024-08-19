@@ -95,6 +95,34 @@ void make_server() {
             return HttpResponse{200, "text/plain", settings.serial_id};
         });
 
+        // Gets the device version.
+        server.when("/system_version")->requested([](const HttpRequest &req) {
+            int handle = MCP_Open();
+            if (handle < 0) {
+                throw std::runtime_error{"MCP_Open() failed with error " + std::to_string(handle)};
+            }
+
+            MCPSystemVersion* version = new MCPSystemVersion;
+            DEBUG_FUNCTION_LINE_INFO("pre-call system ver");
+            MCPError error = MCP_GetSystemVersion(handle, version);
+            DEBUG_FUNCTION_LINE_INFO("post-call system ver");
+            MCP_Close(handle);
+            if (error) {
+                DEBUG_FUNCTION_LINE_ERR("Error at MCP_SystemVersion");
+                return HttpResponse{500, "text/plain", "Couldn't get the system version!"};
+            }
+
+            // DEBUG_FUNCTION_LINE_INFO("Obtained version: %d . %d . %d%s", version->major, version->minor, version->patch, version->region);
+            std::string ret = "";
+            ret.append(std::to_string(version->major));
+            ret.append(".");
+            ret.append(std::to_string(version->minor));
+            ret.append(".");
+            ret.append(std::to_string(version->patch));
+            ret.append("" + version->region);
+            return HttpResponse{200, "text/plain", ret};
+        });
+
         server.when("/currenttitle")->requested([](const HttpRequest &req) {
             ACPTitleId id;
             ACPResult res = ACPGetTitleIdOfMainApplication(&id);
