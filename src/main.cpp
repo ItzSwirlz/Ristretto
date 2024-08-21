@@ -229,6 +229,7 @@ INITIALIZE_PLUGIN() {
     WHBLogUdpInit();
 
     DEBUG_FUNCTION_LINE("Hello world! - Ristretto");
+    nn::ac::Initialize();
 
     WUPSConfigAPIOptionsV1 configOptions = {.name = "Ristretto"};
     if (WUPSConfigAPI_Init(configOptions, ConfigMenuOpenedCallback, ConfigMenuClosedCallback) != WUPSCONFIG_API_RESULT_SUCCESS) {
