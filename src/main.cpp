@@ -9,6 +9,7 @@
 #include <nn/ac.h>
 #include <nn/acp/title.h>
 #include <nn/act.h>
+#include <nn/sl/TitleListCache.h>
 #include <sysapp/launch.h>
 #include <wups.h>
 #include <wups/config/WUPSConfigItemBoolean.h>
@@ -38,7 +39,6 @@ WUPS_USE_STORAGE("ristretto"); // Unique id for the storage api
 
 HttpServer server;
 bool server_made = false;
-static std::vector<std::string> messages;
 
 #define ENABLE_SERVER_DEFAULT_VALUE true
 #define ENABLE_SERVER_CONFIG_ID     "enableServer"
@@ -153,6 +153,71 @@ void make_server() {
             return HttpResponse{200, "text/plain", meta->shortname_en};
         });
 
+        // TODO: Do this only when memory is available. If it isn't, use something
+        // like the notification module to tell the user that it tried but denied
+        // since proceeding would crash the system.
+        // Personally, I've gotten this to work in System Settings without crashing.
+        server.when("/titles")->requested([](const HttpRequest &req) {
+            int handle = MCP_Open();
+            if (handle < 0) { // some error?
+                throw std::runtime_error{"MCP_Open() failed with error " + std::to_string(handle)};
+            }
+
+            // source: https://github.com/dumpling-app/dumpling/blob/83d674f4d6c8348bcdc253a26eb4c2424abe9ef9/source/app/titles.cpp#L153
+            uint32_t count = MCP_TitleCount(handle);
+
+            std::vector<MCPTitleListType> titleList(count);
+            MCPError error = MCP_TitleList(handle, &count, titleList.data(), count * sizeof(MCPTitleListType));
+            MCP_Close(handle);
+            if (error) {
+                DEBUG_FUNCTION_LINE_ERR("Error at MCP_TitleList");
+                return HttpResponse{500, "text/plain", "Couldn't get the title list!"};
+            }
+
+            miniJson::Json::_object res;
+
+            // This is my first time trying this with C++ vectors, so lets see what happens.
+            // Ideally it will just keep rewriting to meta?
+            for(auto& title : titleList) {
+                ACPMetaXml meta alignas(0x40);
+
+                // not all titles are actual game titles
+                // TODO: For vWii titles, allow it under the condition we are able to
+                // send back to the server that Ristretto won't be active.
+                // All titles under MCP_APP_TYPE_GAME (or any Wii U system title) will
+                // allow for Ristretto control inside of it: not sure about homebrew.
+                if(title.appType == MCP_APP_TYPE_GAME || title.appType == MCP_APP_TYPE_GAME_WII || title.appType == MCP_APP_TYPE_SYSTEM_SETTINGS) {
+                    try {
+                        ACPResult acpError = ACPGetTitleMetaXml(title.titleId, &meta);
+                        if (acpError) {
+                            DEBUG_FUNCTION_LINE_ERR("Error at ACPGetTitleMetaXml. SKIPPING %d", title.titleId);
+                            continue;
+                            return HttpResponse{500, "text/plain", "Couldn't get the title list!"};
+                        }
+                    } catch(std::exception &e) {
+                        DEBUG_FUNCTION_LINE_INFO("got error: %s\n", e.what());
+                        return HttpResponse{500, "text/plain", "Couldn't get the title list!"};
+                    }
+                // ugh
+                // also from dumpling
+                // TODO: Consider returning other languages
+                    if(meta.shortname_en[0] != '\0') {
+                        DEBUG_FUNCTION_LINE_INFO("Finished %s", meta.shortname_en);
+                        try {
+                            res[std::to_string(title.titleId)] = meta.shortname_en;
+                            DEBUG_FUNCTION_LINE_INFO("Written to JSON");
+                        } catch(std::exception &e) {
+                            DEBUG_FUNCTION_LINE_INFO("got error: %s\n", e.what());
+                        }
+                    } else {
+                        DEBUG_FUNCTION_LINE_INFO("No shortname");
+                    }
+                }
+            }
+
+            return HttpResponse{200, res};
+        });
+
         // Launches the Wii U Menu
         server.when("/launch/menu")->posted([](const HttpRequest &req) {
             // FIXME: May lock up when the plugin is inactive, like in friends list
@@ -175,6 +240,8 @@ void make_server() {
 }
 
 void stop_server() {
+    if (!enableServer || !server_made) return;
+    // dont shut down what doesnt exist
     server.shutdown();
     server_made = false;
     DEBUG_FUNCTION_LINE("Server shut down.");
@@ -229,7 +296,6 @@ INITIALIZE_PLUGIN() {
     WHBLogUdpInit();
 
     DEBUG_FUNCTION_LINE("Hello world! - Ristretto");
-    nn::ac::Initialize();
 
     WUPSConfigAPIOptionsV1 configOptions = {.name = "Ristretto"};
     if (WUPSConfigAPI_Init(configOptions, ConfigMenuOpenedCallback, ConfigMenuClosedCallback) != WUPSCONFIG_API_RESULT_SUCCESS) {
@@ -244,7 +310,7 @@ INITIALIZE_PLUGIN() {
         DEBUG_FUNCTION_LINE_ERR("SaveStorage failed: %s (%d)", WUPSStorageAPI_GetStatusStr(storageRes), storageRes);
     }
 
-    if (!enableServer) return;
+    if (!enableServer || server_made) return;
     make_server_on_thread();
 }
 
@@ -254,4 +320,13 @@ DEINITIALIZE_PLUGIN() {
     DEBUG_FUNCTION_LINE("Ristretto deinitializing.");
     WHBLogUdpDeinit();
     WHBLogCafeDeinit();
+}
+
+ON_APPLICATION_START()
+{
+    nn::ac::Initialize();
+    nn::ac::ConnectAsync();
+
+    if(!enableServer || server_made) return;
+    make_server_on_thread();
 }
