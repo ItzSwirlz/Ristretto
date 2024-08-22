@@ -289,6 +289,32 @@ void ConfigMenuClosedCallback() {
     }
 }
 
+ssize_t
+write_to_log(_reent*, void*, const char* ptr, size_t len)
+{
+    try {
+        // only way to guarantee it's null-terminated
+        std::string buf{ptr, len};
+        if (!WHBLogWrite(buf.c_str()))
+            return -1;
+        return buf.size();
+    }
+    catch (...) {
+        return -1;
+    }
+}
+
+
+__attribute__((__constructor__))
+void
+init_stdio()
+{
+    static devoptab_t dev_out;
+    dev_out.name = "stdout";
+    dev_out.write_r = write_to_log;
+    devoptab_list[STD_OUT] = &dev_out;
+}
+
 // Gets called ONCE when the plugin was loaded.
 INITIALIZE_PLUGIN() {
     // Logging only works when compiled with `make DEBUG=1`. See the README for more information.
@@ -310,8 +336,8 @@ INITIALIZE_PLUGIN() {
         DEBUG_FUNCTION_LINE_ERR("SaveStorage failed: %s (%d)", WUPSStorageAPI_GetStatusStr(storageRes), storageRes);
     }
 
-    if (!enableServer || server_made) return;
-    make_server_on_thread();
+    // if (!enableServer || server_made) return;
+    // make_server_on_thread();
 }
 
 // Gets called when the plugin will be unloaded.
@@ -325,8 +351,13 @@ DEINITIALIZE_PLUGIN() {
 ON_APPLICATION_START()
 {
     nn::ac::Initialize();
-    nn::ac::ConnectAsync();
-
-    if(!enableServer || server_made) return;
+	nn::ac::ConnectAsync();
+    if(!enableServer) return;
     make_server_on_thread();
+}
+
+ON_APPLICATION_ENDS()
+{
+    if(!enableServer) return;
+    stop_server();
 }
