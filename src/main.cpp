@@ -89,7 +89,7 @@ void make_server() {
             MCP_Close(handle);
             if (error) {
                 DEBUG_FUNCTION_LINE_ERR("Error at MCP_GetSysProdSettings");
-                return HttpResponse{500, "text/plain", "Couldn't get the serial!"};
+                return HttpResponse{500, "text/plain", "Couldn't get the serial! Error at MCP_GetSysProdSettings"};
             }
 
             DEBUG_FUNCTION_LINE_INFO("Obtained serial: %s", settings.serial_id);
@@ -109,7 +109,7 @@ void make_server() {
             MCP_Close(handle);
             if (error) {
                 DEBUG_FUNCTION_LINE_ERR("Error at MCP_GetSysProdSettings");
-                return HttpResponse{500, "text/plain", "Couldn't get the model number!"};
+                return HttpResponse{500, "text/plain", "Couldn't get the model number! Error at MCP_GetSysProdSettings"};
             }
 
             DEBUG_FUNCTION_LINE_INFO("Obtained model number: %s", settings.model_number);
@@ -123,17 +123,14 @@ void make_server() {
                 throw std::runtime_error{"MCP_Open() failed with error " + std::to_string(handle)};
             }
 
-            MCPSystemVersion* version = new MCPSystemVersion;
-            DEBUG_FUNCTION_LINE_INFO("pre-call system ver");
-            MCPError error = MCP_GetSystemVersion(handle, version);
-            DEBUG_FUNCTION_LINE_INFO("post-call system ver");
+            MCPSystemVersion *version = new MCPSystemVersion;
+            MCPError error            = MCP_GetSystemVersion(handle, version);
             MCP_Close(handle);
             if (error) {
                 DEBUG_FUNCTION_LINE_ERR("Error at MCP_SystemVersion");
-                return HttpResponse{500, "text/plain", "Couldn't get the system version!"};
+                return HttpResponse{500, "text/plain", "Couldn't get the system version! Error at MCP_SystemVersion"};
             }
 
-            // DEBUG_FUNCTION_LINE_INFO("Obtained version: %d . %d . %d%s", version->major, version->minor, version->patch, version->region);
             std::string ret = std::format("{:d}.{:d}.{:d}{}", version->major, version->minor, version->patch, version->region);
             return HttpResponse{200, "text/plain", ret};
         });
@@ -143,13 +140,13 @@ void make_server() {
             ACPResult res = ACPGetTitleIdOfMainApplication(&id);
             if (res) {
                 DEBUG_FUNCTION_LINE_ERR("Error at ACPGetTitleIdOfMainApplication");
-                return HttpResponse{500, "text/plain", "Couldn't get the title!"};
+                return HttpResponse{500, "text/plain", "Couldn't get the current title! Error at ACPGetTitleIdOfMainApplication"};
             }
             ACPMetaXml *meta = new ACPMetaXml;
             res              = ACPGetTitleMetaXml(id, meta);
             if (res) {
                 DEBUG_FUNCTION_LINE_ERR("Error at ACPGetTitleMetaXml");
-                return HttpResponse{500, "text/plain", "Couldn't get the title!"};
+                return HttpResponse{500, "text/plain", "Couldn't get the title! Error at ACPGetTitleMetaXml"};
             }
             return HttpResponse{200, "text/plain", meta->longname_en};
         });
@@ -172,14 +169,14 @@ void make_server() {
             MCP_Close(handle);
             if (error) {
                 DEBUG_FUNCTION_LINE_ERR("Error at MCP_TitleList");
-                return HttpResponse{500, "text/plain", "Couldn't get the title list!"};
+                return HttpResponse{500, "text/plain", "Couldn't get the title list! Error at MCP_TitleList"};
             }
 
             miniJson::Json::_object res;
 
             // This is my first time trying this with C++ vectors, so lets see what happens.
             // Ideally it will just keep rewriting to meta?
-            for(auto& title : titleList) {
+            for (auto &title : titleList) {
                 ACPMetaXml meta alignas(0x40);
 
                 // not all titles are actual game titles
@@ -187,28 +184,26 @@ void make_server() {
                 // send back to the server that Ristretto won't be active.
                 // All titles under MCP_APP_TYPE_GAME (or any Wii U system title) will
                 // allow for Ristretto control inside of it: not sure about homebrew.
-                if(title.appType == MCP_APP_TYPE_GAME || title.appType == MCP_APP_TYPE_GAME_WII || title.appType == MCP_APP_TYPE_SYSTEM_SETTINGS) {
+                if (title.appType == MCP_APP_TYPE_GAME || title.appType == MCP_APP_TYPE_GAME_WII || title.appType == MCP_APP_TYPE_SYSTEM_SETTINGS) {
                     try {
                         ACPResult acpError = ACPGetTitleMetaXml(title.titleId, &meta);
                         if (acpError) {
                             DEBUG_FUNCTION_LINE_ERR("Error at ACPGetTitleMetaXml. SKIPPING %d", title.titleId);
                             continue;
-                            return HttpResponse{500, "text/plain", "Couldn't get the title list!"};
                         }
-                    } catch(std::exception &e) {
-                        DEBUG_FUNCTION_LINE_INFO("got error: %s\n", e.what());
-                        return HttpResponse{500, "text/plain", "Couldn't get the title list!"};
+                    } catch (std::exception &e) {
+                        DEBUG_FUNCTION_LINE_ERR("Exception thrown at ACPGetTitleMetaXml: %s\n", e.what());
+                        return HttpResponse{500, "text/plain", "Couldn't get the title list! Exception at ACPGetTitleMetaXml"};
                     }
-                // ugh
-                // also from dumpling
-                // TODO: Consider returning other languages
-                    if(meta.longname_en[0] != '\0') {
+
+                    // TODO: Consider returning other languages
+                    if (meta.longname_en[0] != '\0') {
                         DEBUG_FUNCTION_LINE_INFO("Finished %s", meta.longname_en);
                         try {
                             res[std::to_string(title.titleId)] = meta.longname_en;
                             DEBUG_FUNCTION_LINE_INFO("Written to JSON");
-                        } catch(std::exception &e) {
-                            DEBUG_FUNCTION_LINE_INFO("got error: %s\n", e.what());
+                        } catch (std::exception &e) {
+                            DEBUG_FUNCTION_LINE_ERR("Failed to write title to JSON: %s\n", e.what());
                         }
                     } else {
                         DEBUG_FUNCTION_LINE_INFO("No longname");
@@ -236,12 +231,12 @@ void make_server() {
         // Launches a title. First it checks if it exists
         server.when("/launch/title")->posted([](const HttpRequest &req) {
             auto titleId = req.json().toObject();
-            uint64_t id = stoll(titleId["title"].toString());
-            if(SYSCheckTitleExists(id)) {
+            uint64_t id  = stoll(titleId["title"].toString());
+            if (SYSCheckTitleExists(id)) {
                 DEBUG_FUNCTION_LINE_INFO("Opening requested title");
                 SYSLaunchTitle(id);
             } else {
-                DEBUG_FUNCTION_LINE_INFO("Title ID doesn't exist!");
+                DEBUG_FUNCTION_LINE_ERR("Title ID doesn't exist!");
                 return HttpResponse{404};
             }
             return HttpResponse{200};
@@ -250,7 +245,7 @@ void make_server() {
         // TODO: Make the port configurable
         server.startListening(8572);
     } catch (std::exception &e) {
-        DEBUG_FUNCTION_LINE_INFO("got error: %s\n", e.what());
+        DEBUG_FUNCTION_LINE_INFO("Exception thrown in the HTTP server: %s\n", e.what());
     }
 }
 
@@ -267,7 +262,7 @@ void make_server_on_thread() {
         std::jthread thready(make_server);
         thready.detach();
     } catch (std::exception &e) {
-        DEBUG_FUNCTION_LINE_INFO("got error: %s\n", e.what());
+        DEBUG_FUNCTION_LINE_INFO("Exception thrown trying to make the server thread: %s\n", e.what());
     }
 }
 
@@ -304,29 +299,25 @@ void ConfigMenuClosedCallback() {
     }
 }
 
+// Function hooking for the HTTP server logs. Thank you to DanielKO
 ssize_t
-write_to_log(_reent*, void*, const char* ptr, size_t len)
-{
+write_to_log(_reent *, void *, const char *ptr, size_t len) {
     try {
         // only way to guarantee it's null-terminated
         std::string buf{ptr, len};
         if (!WHBLogWrite(buf.c_str()))
             return -1;
         return buf.size();
-    }
-    catch (...) {
+    } catch (...) {
         return -1;
     }
 }
 
-
-__attribute__((__constructor__))
-void
-init_stdio()
-{
+__attribute__((__constructor__)) void
+init_stdio() {
     static devoptab_t dev_out;
-    dev_out.name = "stdout";
-    dev_out.write_r = write_to_log;
+    dev_out.name           = "stdout";
+    dev_out.write_r        = write_to_log;
     devoptab_list[STD_OUT] = &dev_out;
 }
 
@@ -350,9 +341,6 @@ INITIALIZE_PLUGIN() {
     if ((storageRes = WUPSStorageAPI::SaveStorage()) != WUPS_STORAGE_ERROR_SUCCESS) {
         DEBUG_FUNCTION_LINE_ERR("SaveStorage failed: %s (%d)", WUPSStorageAPI_GetStatusStr(storageRes), storageRes);
     }
-
-    // if (!enableServer || server_made) return;
-    // make_server_on_thread();
 }
 
 // Gets called when the plugin will be unloaded.
@@ -363,16 +351,15 @@ DEINITIALIZE_PLUGIN() {
     WHBLogCafeDeinit();
 }
 
-ON_APPLICATION_START()
-{
+// Connections reset every time an application is launched.
+ON_APPLICATION_START() {
     nn::ac::Initialize();
-	nn::ac::ConnectAsync();
-    if(!enableServer) return;
+    nn::ac::ConnectAsync();
+    if (!enableServer) return;
     make_server_on_thread();
 }
 
-ON_APPLICATION_ENDS()
-{
-    if(!enableServer) return;
+ON_APPLICATION_ENDS() {
+    if (!enableServer) return;
     stop_server();
 }
