@@ -151,7 +151,7 @@ void make_server() {
                 DEBUG_FUNCTION_LINE_ERR("Error at ACPGetTitleMetaXml");
                 return HttpResponse{500, "text/plain", "Couldn't get the title!"};
             }
-            return HttpResponse{200, "text/plain", meta->shortname_en};
+            return HttpResponse{200, "text/plain", meta->longname_en};
         });
 
         // TODO: Do this only when memory is available. If it isn't, use something
@@ -202,16 +202,16 @@ void make_server() {
                 // ugh
                 // also from dumpling
                 // TODO: Consider returning other languages
-                    if(meta.shortname_en[0] != '\0') {
-                        DEBUG_FUNCTION_LINE_INFO("Finished %s", meta.shortname_en);
+                    if(meta.longname_en[0] != '\0') {
+                        DEBUG_FUNCTION_LINE_INFO("Finished %s", meta.longname_en);
                         try {
-                            res[std::to_string(title.titleId)] = meta.shortname_en;
+                            res[std::to_string(title.titleId)] = meta.longname_en;
                             DEBUG_FUNCTION_LINE_INFO("Written to JSON");
                         } catch(std::exception &e) {
                             DEBUG_FUNCTION_LINE_INFO("got error: %s\n", e.what());
                         }
                     } else {
-                        DEBUG_FUNCTION_LINE_INFO("No shortname");
+                        DEBUG_FUNCTION_LINE_INFO("No longname");
                     }
                 }
             }
