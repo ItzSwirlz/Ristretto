@@ -11,6 +11,7 @@
 #include <nn/act.h>
 #include <nn/sl/TitleListCache.h>
 #include <sysapp/launch.h>
+#include <sysapp/title.h>
 #include <wups.h>
 #include <wups/config/WUPSConfigItemBoolean.h>
 #include <wups/config/WUPSConfigItemIntegerRange.h>
@@ -229,6 +230,20 @@ void make_server() {
         server.when("/launch/emanual")->posted([](const HttpRequest &req) {
             // FIXME: If the title has no manual, DO NOT SWITCH!!!! IT WILL LOCKUP THE SYSTEM! (eg Friends List)
             SYSSwitchToEManual();
+            return HttpResponse{200};
+        });
+
+        // Launches a title. First it checks if it exists
+        server.when("/launch/title")->posted([](const HttpRequest &req) {
+            auto titleId = req.json().toObject();
+            uint64_t id = stoll(titleId["title"].toString());
+            if(SYSCheckTitleExists(id)) {
+                DEBUG_FUNCTION_LINE_INFO("Opening requested title");
+                SYSLaunchTitle(id);
+            } else {
+                DEBUG_FUNCTION_LINE_INFO("Title ID doesn't exist!");
+                return HttpResponse{404};
+            }
             return HttpResponse{200};
         });
 
