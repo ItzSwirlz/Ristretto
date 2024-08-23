@@ -184,7 +184,12 @@ void make_server() {
                 // send back to the server that Ristretto won't be active.
                 // All titles under MCP_APP_TYPE_GAME (or any Wii U system title) will
                 // allow for Ristretto control inside of it: not sure about homebrew.
-                if (title.appType == MCP_APP_TYPE_GAME || title.appType == MCP_APP_TYPE_GAME_WII || title.appType == MCP_APP_TYPE_SYSTEM_SETTINGS) {
+                if (title.appType == MCP_APP_TYPE_GAME ||
+                    title.appType == MCP_APP_TYPE_GAME_WII ||
+                    title.appType == MCP_APP_TYPE_SYSTEM_MENU ||
+                    title.appType == MCP_APP_TYPE_SYSTEM_APPS ||
+                    title.appType == MCP_APP_TYPE_ACCOUNT_APPS ||
+                    title.appType == MCP_APP_TYPE_SYSTEM_SETTINGS) {
                     try {
                         ACPResult acpError = ACPGetTitleMetaXml(title.titleId, &meta);
                         if (acpError) {
