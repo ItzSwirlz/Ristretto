@@ -63,6 +63,7 @@ void make_server() {
 
         // Shuts down the console regardless of what state it currently is in.
         server.when("/power/shutdown")->posted([](const HttpRequest &req) {
+            DEBUG_FUNCTION_LINE_INFO("Shutting down Wii U.");
             OSShutdown();
 
             return HttpResponse{200};
@@ -70,6 +71,7 @@ void make_server() {
 
         // Reboot the console regardless of what state it currently is in.
         server.when("/power/reboot")->posted([](const HttpRequest &req) {
+            DEBUG_FUNCTION_LINE_INFO("Rebooting Wii U.");
             OSForceFullRelaunch();
             SYSLaunchMenu();
 
@@ -156,6 +158,7 @@ void make_server() {
         // since proceeding would crash the system.
         // Personally, I've gotten this to work in System Settings without crashing.
         server.when("/title/list")->requested([](const HttpRequest &req) {
+            DEBUG_FUNCTION_LINE_INFO("Getting title list.");
             int handle = MCP_Open();
             if (handle < 0) { // some error?
                 throw std::runtime_error{"MCP_Open() failed with error " + std::to_string(handle)};
@@ -221,6 +224,7 @@ void make_server() {
 
         // Launches the Wii U Menu
         server.when("/launch/menu")->posted([](const HttpRequest &req) {
+            DEBUG_FUNCTION_LINE_INFO("Launching Menu.");
             // FIXME: May lock up when the plugin is inactive, like in friends list
             SYSLaunchMenu();
             return HttpResponse{200};
@@ -232,7 +236,7 @@ void make_server() {
             auto titleId = req.json().toObject();
             uint64_t id  = stoll(titleId["title"].toString());
             if (SYSCheckTitleExists(id)) {
-                DEBUG_FUNCTION_LINE_INFO("Opening requested title");
+                DEBUG_FUNCTION_LINE_INFO("Launching requested title.");
                 SYSLaunchTitle(id);
             } else {
                 DEBUG_FUNCTION_LINE_ERR("Title ID doesn't exist!");
@@ -243,6 +247,7 @@ void make_server() {
 
         // Switch to the current title's manual
         server.when("/switch/emanual")->posted([](const HttpRequest &req) {
+            DEBUG_FUNCTION_LINE_INFO("Switching to the EManual.");
             // FIXME: If the title has no manual, DO NOT SWITCH!!!! IT WILL LOCKUP THE SYSTEM! (eg Friends List)
             SYSSwitchToEManual();
             return HttpResponse{200};
