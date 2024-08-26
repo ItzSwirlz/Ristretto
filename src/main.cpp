@@ -62,14 +62,14 @@ void make_server() {
         });
 
         // Shuts down the console regardless of what state it currently is in.
-        server.when("/shutdown")->posted([](const HttpRequest &req) {
+        server.when("/power/shutdown")->posted([](const HttpRequest &req) {
             OSShutdown();
 
             return HttpResponse{200};
         });
 
         // Reboot the console regardless of what state it currently is in.
-        server.when("/reboot")->posted([](const HttpRequest &req) {
+        server.when("/power/reboot")->posted([](const HttpRequest &req) {
             OSForceFullRelaunch();
             SYSLaunchMenu();
 
@@ -77,7 +77,7 @@ void make_server() {
         });
 
         // Gets the device serial number.
-        server.when("/serial")->requested([](const HttpRequest &req) {
+        server.when("/device/serial_id")->requested([](const HttpRequest &req) {
             // Credit to .danielko on Discord
             int handle = MCP_Open();
             if (handle < 0) { // some error?
@@ -97,7 +97,7 @@ void make_server() {
         });
 
         // Gets the device model
-        server.when("/model")->requested([](const HttpRequest &req) {
+        server.when("/device/model_number")->requested([](const HttpRequest &req) {
             // Credit to .danielko on Discord
             int handle = MCP_Open();
             if (handle < 0) { // some error?
@@ -117,7 +117,7 @@ void make_server() {
         });
 
         // Gets the device version.
-        server.when("/system_version")->requested([](const HttpRequest &req) {
+        server.when("/device/version")->requested([](const HttpRequest &req) {
             int handle = MCP_Open();
             if (handle < 0) {
                 throw std::runtime_error{"MCP_Open() failed with error " + std::to_string(handle)};
@@ -135,7 +135,7 @@ void make_server() {
             return HttpResponse{200, "text/plain", ret};
         });
 
-        server.when("/currenttitle")->requested([](const HttpRequest &req) {
+        server.when("/title/current")->requested([](const HttpRequest &req) {
             ACPTitleId id;
             ACPResult res = ACPGetTitleIdOfMainApplication(&id);
             if (res) {
@@ -155,7 +155,7 @@ void make_server() {
         // like the notification module to tell the user that it tried but denied
         // since proceeding would crash the system.
         // Personally, I've gotten this to work in System Settings without crashing.
-        server.when("/titles")->requested([](const HttpRequest &req) {
+        server.when("/title/list")->requested([](const HttpRequest &req) {
             int handle = MCP_Open();
             if (handle < 0) { // some error?
                 throw std::runtime_error{"MCP_Open() failed with error " + std::to_string(handle)};
@@ -226,12 +226,6 @@ void make_server() {
             return HttpResponse{200};
         });
 
-        // Launches the current title's manual
-        server.when("/launch/emanual")->posted([](const HttpRequest &req) {
-            // FIXME: If the title has no manual, DO NOT SWITCH!!!! IT WILL LOCKUP THE SYSTEM! (eg Friends List)
-            SYSSwitchToEManual();
-            return HttpResponse{200};
-        });
 
         // Launches a title. First it checks if it exists
         server.when("/launch/title")->posted([](const HttpRequest &req) {
@@ -244,6 +238,13 @@ void make_server() {
                 DEBUG_FUNCTION_LINE_ERR("Title ID doesn't exist!");
                 return HttpResponse{404};
             }
+            return HttpResponse{200};
+        });
+
+        // Switch to the current title's manual
+        server.when("/switch/emanual")->posted([](const HttpRequest &req) {
+            // FIXME: If the title has no manual, DO NOT SWITCH!!!! IT WILL LOCKUP THE SYSTEM! (eg Friends List)
+            SYSSwitchToEManual();
             return HttpResponse{200};
         });
 
