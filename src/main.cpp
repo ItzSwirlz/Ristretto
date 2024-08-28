@@ -58,7 +58,7 @@ void make_server() {
 
         // Empty endpoint to allow for device discovery.
         server.when("/")->requested([](const HttpRequest &req) {
-            return HttpResponse{200};
+            return HttpResponse{200, "text/plain", "Ristretto"};
         });
 
         // Shuts down the console regardless of what state it currently is in.
