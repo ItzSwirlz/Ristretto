@@ -153,10 +153,7 @@ void make_server() {
             return HttpResponse{200, "text/plain", meta->longname_en};
         });
 
-        // TODO: Do this only when memory is available. If it isn't, use something
-        // like the notification module to tell the user that it tried but denied
-        // since proceeding would crash the system.
-        // Personally, I've gotten this to work in System Settings without crashing.
+        // NOT FOR HOMEBREW TITLES!!!!!!!
         server.when("/title/list")->requested([](const HttpRequest &req) {
             DEBUG_FUNCTION_LINE_INFO("Getting title list.");
             int handle = MCP_Open();
@@ -164,8 +161,9 @@ void make_server() {
                 throw std::runtime_error{"MCP_Open() failed with error " + std::to_string(handle)};
             }
 
-            std::vector<MCPTitleListType> titleList(1000);
-            MCPError error = MCP_TitleList(handle, &count, titleList.data(), titleList.size() * sizeof(MCPTitleListType));
+            uint32_t outCount;
+            std::vector<MCPTitleListType> titleList(1000); // arbitrary number so we don't overflow
+            MCPError error = MCP_TitleList(handle, &outCount, titleList.data(), titleList.size() * sizeof(MCPTitleListType));
             MCP_Close(handle);
             if (error) {
                 DEBUG_FUNCTION_LINE_ERR("Error at MCP_TitleList");
