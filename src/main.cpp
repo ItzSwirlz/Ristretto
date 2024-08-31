@@ -164,11 +164,8 @@ void make_server() {
                 throw std::runtime_error{"MCP_Open() failed with error " + std::to_string(handle)};
             }
 
-            // source: https://github.com/dumpling-app/dumpling/blob/83d674f4d6c8348bcdc253a26eb4c2424abe9ef9/source/app/titles.cpp#L153
-            uint32_t count = MCP_TitleCount(handle);
-
-            std::vector<MCPTitleListType> titleList(count);
-            MCPError error = MCP_TitleList(handle, &count, titleList.data(), count * sizeof(MCPTitleListType));
+            std::vector<MCPTitleListType> titleList(1000);
+            MCPError error = MCP_TitleList(handle, &count, titleList.data(), titleList.size() * sizeof(MCPTitleListType));
             MCP_Close(handle);
             if (error) {
                 DEBUG_FUNCTION_LINE_ERR("Error at MCP_TitleList");
@@ -193,15 +190,10 @@ void make_server() {
                     title.appType == MCP_APP_TYPE_SYSTEM_APPS ||
                     title.appType == MCP_APP_TYPE_ACCOUNT_APPS ||
                     title.appType == MCP_APP_TYPE_SYSTEM_SETTINGS) {
-                    try {
-                        ACPResult acpError = ACPGetTitleMetaXml(title.titleId, &meta);
-                        if (acpError) {
-                            DEBUG_FUNCTION_LINE_ERR("Error at ACPGetTitleMetaXml. SKIPPING %d", title.titleId);
-                            continue;
-                        }
-                    } catch (std::exception &e) {
-                        DEBUG_FUNCTION_LINE_ERR("Exception thrown at ACPGetTitleMetaXml: %s\n", e.what());
-                        return HttpResponse{500, "text/plain", "Couldn't get the title list! Exception at ACPGetTitleMetaXml"};
+                    ACPResult acpError = ACPGetTitleMetaXml(title.titleId, &meta);
+                    if (acpError) {
+                        DEBUG_FUNCTION_LINE_ERR("Error at ACPGetTitleMetaXml. Title ID %d", title.titleId);
+                        continue;
                     }
 
                     // TODO: Consider returning other languages
