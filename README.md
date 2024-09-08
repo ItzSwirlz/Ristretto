@@ -1,17 +1,13 @@
 # Ristretto
 
-Ristretto is a plugin for Aroma that provides a foundation for smart home automation on the Wii U with a HTTP server. This will allow for other devices to communicate with the Wii U, and can then be used with something like [homebridge-wiiu](https://github.com/ItzSwirlz/homebridge-wiiu) to be added to existing home automation software.
-
-Currently, it is still a work-in-progress. This code is currently made specifically for my setup and will eventually be generalized.
+Ristretto is a plugin for Aroma that provides a foundation for smart home automation on the Wii U with a HTTP server. This will allow for other devices to communicate with the Wii U, and can then be used to extend existing home automation sofftware.
 
 ## Installation
 
-(`[ENVIRONMENT]` is a placeholder for the actual environment name.)
+1. Copy the file `Ristretto.wps` into `sd:/wiiu/environments/aroma/plugins`.
+2. Requires the [WiiUPluginLoaderBackend](https://github.com/wiiu-env/WiiUPluginLoaderBackend) in `sd:/wiiu/environments/aroma/modules`.
 
-1. Copy the file `ExamplePlugin.wps` into `sd:/wiiu/environments/[ENVIRONMENT]/plugins`.
-2. Requires the [WiiUPluginLoaderBackend](https://github.com/wiiu-env/WiiUPluginLoaderBackend) in `sd:/wiiu/environments/[ENVIRONMENT]/modules`.
-
-Start the environment (e.g Aroma) and the backend should load the plugin.
+Start the environment and the backend should load the plugin. By default, the port runs on :8572. You'll know the server is working when you open `http://(wiiu_ip_address):8572` in your browser and you should see the text "Ristretto".
 
 ## Building
 
@@ -24,9 +20,11 @@ Install them (in this order) according to their README's. Don't forget the depen
 
 Then you should be able to compile via `make` (with no logging) or `make DEBUG=1` (with logging).
 
-## Buildflags
+Two other libraries, [MiniJson](https://github.com/zsmj2017/MiniJson) and a modified version of [tinyhttp](https://github.com/kissbeni/tinyhttp) are compiled with the source.
 
-### Logging
+### Buildflags
+
+#### Logging
 
 Building via `make` only logs errors (via OSReport). To enable logging via the [LoggingModule](https://github.com/wiiu-env/LoggingModule) set `DEBUG` to `1` or `VERBOSE`.
 
@@ -36,21 +34,29 @@ Building via `make` only logs errors (via OSReport). To enable logging via the [
 
 If the [LoggingModule](https://github.com/wiiu-env/LoggingModule) is not present, it'll fallback to UDP (Port 4405) and [CafeOS](https://github.com/wiiu-env/USBSerialLoggingModule) logging.
 
-## Building using the Dockerfile
+### Building using the Dockerfile
 
 It's possible to use a docker image for building. This way you don't need anything installed on your host system.
 
 ```
 # Build docker image (only needed once)
-docker build . -t example-plugin-builder
+docker build . -t ristretto-builder
 
 # make
-docker run -it --rm -v ${PWD}:/project example-plugin-builder make DEBUG=1
+docker run -it --rm -v ${PWD}:/project ristretto-builder make DEBUG=1
 
 # make clean
-docker run -it --rm -v ${PWD}:/project example-plugin-builder make clean
+docker run -it --rm -v ${PWD}:/project ristretto-builder make clean
 ```
 
-## Format the code via docker
+#### Format the code via docker
 
 `docker run --rm -v ${PWD}:/src ghcr.io/wiiu-env/clang-format:13.0.0-2 -r ./src -i`
+
+## Credits
+Ristretto is a big project. It explores so many different areas of the Wii U and opens the door to more opportunities when it comes to home automation, homebrew, reverse engineering and so much more.
+
+- [Maschell](https://github.com/maschell) - For everything he has done with the Wii U homebrew scene, and for helping me in general
+- [Daniel K.O.](https://github.com/dkosmari) - Helping in general, debugging, advice with sockets, threading, function hooking
+- [TraceEntertains](https://github.com/TraceEntertains) - Defining endian functions (e.g. bswap32) for Wii U, config menu, research with title information
+- You, for checking out this project.
