@@ -1,5 +1,11 @@
 # Ristretto
 
+<p align="center">
+  <img src=./.github/ristretto.png>
+  <br>
+  <sub>This plugin is named after the type of coffee. The logo is a sort-of depiction of what it looks like.</sub>
+</p>
+
 Ristretto is a plugin for Aroma that provides a foundation for smart home automation on the Wii U with a HTTP server. This will allow for other devices to communicate with the Wii U, and can then be used to extend existing home automation sofftware.
 
 ## Installation
@@ -59,4 +65,5 @@ Ristretto is a big project. It explores so many different areas of the Wii U and
 - [Maschell](https://github.com/maschell) - For everything he has done with the Wii U homebrew scene, and for helping me in general
 - [Daniel K.O.](https://github.com/dkosmari) - Helping in general, debugging, advice with sockets, threading, function hooking
 - [TraceEntertains](https://github.com/TraceEntertains) - Defining endian functions (e.g. bswap32) for Wii U, config menu, research with title information
+- [Wish](https://github.com/wish13yt) - Ristretto logo
 - You, for checking out this project.
