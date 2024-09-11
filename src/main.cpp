@@ -40,6 +40,7 @@ WUPS_USE_STORAGE("ristretto"); // Unique id for the storage api
 
 HttpServer server;
 bool server_made = false;
+int button_value = 0;
 
 #define ENABLE_SERVER_DEFAULT_VALUE true
 #define ENABLE_SERVER_CONFIG_ID     "enableServer"
@@ -135,6 +136,19 @@ void make_server() {
 
             std::string ret = std::format("{:d}.{:d}.{:d}{}", version->major, version->minor, version->patch, version->region);
             return HttpResponse{200, "text/plain", ret};
+        });
+
+        // Presses a specific key based on what is requested.
+        // The "button" key in the JSON request will be the value
+        // of the button as defined in the VPADButtons enum.
+        // For performance purposes on the console, Ristretto
+        // should not have to map which key means what.
+        // The home automation integration should do so and set the value directly.
+        server.when("/remote/key")->requested([](const HttpRequest &req) {
+            auto key = req.json().toObject();
+
+            button_value = stoi(key["button"].toString());
+            return HttpResponse{200};
         });
 
         server.when("/title/current")->requested([](const HttpRequest &req) {
@@ -364,3 +378,14 @@ ON_APPLICATION_ENDS() {
     if (!enableServer) return;
     stop_server();
 }
+
+DECL_FUNCTION(int32_t, VPADRead, VPADChan chan, VPADStatus *buffers, uint32_t count, VPADReadError *outError) {
+    int result = real_VPADRead(chan, buffers, count, outError);
+    if (button_value != 0) {
+        buffers->hold |= button_value;
+        button_value = 0; // done
+    }
+    return result;
+}
+
+WUPS_MUST_REPLACE(VPADRead, WUPS_LOADER_LIBRARY_VPAD, VPADRead);
