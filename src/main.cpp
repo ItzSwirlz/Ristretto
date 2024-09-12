@@ -144,7 +144,7 @@ void make_server() {
         // For performance purposes on the console, Ristretto
         // should not have to map which key means what.
         // The home automation integration should do so and set the value directly.
-        server.when("/remote/key")->requested([](const HttpRequest &req) {
+        server.when("/remote/key")->posted([](const HttpRequest &req) {
             auto key = req.json().toObject();
 
             button_value = stoi(key["button"].toString());
