@@ -41,6 +41,7 @@ WUPS_USE_STORAGE("ristretto"); // Unique id for the storage api
 HttpServer server;
 bool server_made = false;
 int button_value = 0;
+uint8_t vpad_battery = 0;
 
 #define ENABLE_SERVER_DEFAULT_VALUE true
 #define ENABLE_SERVER_CONFIG_ID     "enableServer"
@@ -135,6 +136,11 @@ void make_server() {
             }
 
             std::string ret = std::format("{:d}.{:d}.{:d}{}", version->major, version->minor, version->patch, version->region);
+            return HttpResponse{200, "text/plain", ret};
+        });
+
+        server.when("/gamepad/battery")->requested([](const HttpRequest& req) {
+            std::string ret = std::format("{:d}", vpad_battery);
             return HttpResponse{200, "text/plain", ret};
         });
 
@@ -381,6 +387,7 @@ ON_APPLICATION_ENDS() {
 
 DECL_FUNCTION(int32_t, VPADRead, VPADChan chan, VPADStatus *buffers, uint32_t count, VPADReadError *outError) {
     int result = real_VPADRead(chan, buffers, count, outError);
+    vpad_battery = buffers->battery;
     if (button_value != 0) {
         buffers->hold |= button_value;
         button_value = 0; // done
