@@ -1,4 +1,5 @@
 #include "utils/logger.h"
+#include <coreinit/bsp.h>
 #include <coreinit/filesystem.h>
 #include <coreinit/launch.h>
 #include <coreinit/mcp.h>
@@ -136,6 +137,20 @@ void make_server() {
             }
 
             std::string ret = std::format("{:d}.{:d}.{:d}{}", version->major, version->minor, version->patch, version->region);
+            return HttpResponse{200, "text/plain", ret};
+        });
+
+        // Gets the device hardware version from the BSP (in decimal form)
+        // Frontend can deal with correspinding the version to the text
+        server.when("/device/hardware_version")->requested([](const HttpRequest &req) {
+            BSPHardwareVersion hw_ver;
+            BSPError err = bspGetHardwareVersion(&hw_ver);
+            if (err) {
+                DEBUG_FUNCTION_LINE_ERR("Error at bspGetHardwareVersion");
+                return HttpResponse{500, "text/plain", "Couldn't get the hardware version! Error at bspGetHardwareVersion"};
+            }
+
+            std::string ret = std::format("{:d}", hw_ver);
             return HttpResponse{200, "text/plain", ret};
         });
 
