@@ -1,3 +1,4 @@
+#include "languages.h"
 #include "utils/logger.h"
 #include <coreinit/bsp.h>
 #include <coreinit/filesystem.h>
@@ -46,6 +47,7 @@ uint8_t vpad_battery = 0;
 
 #define ENABLE_SERVER_DEFAULT_VALUE true
 #define ENABLE_SERVER_CONFIG_ID     "enableServer"
+#define TITLE_LANG_CONFIG_ID        "titleLang"
 
 bool enableServer = ENABLE_SERVER_DEFAULT_VALUE;
 
@@ -185,7 +187,7 @@ void make_server() {
                 DEBUG_FUNCTION_LINE_ERR("Error at ACPGetTitleMetaXml");
                 return HttpResponse{500, "text/plain", "Couldn't get the title! Error at ACPGetTitleMetaXml"};
             }
-            return HttpResponse{200, "text/plain", meta->longname_en};
+            return HttpResponse{200, "text/plain", getTitleLongname(meta)};
         });
 
         // NOT FOR HOMEBREW TITLES!!!!!!!
@@ -233,13 +235,13 @@ void make_server() {
                     if (meta.longname_en[0] != '\0') {
                         DEBUG_FUNCTION_LINE_INFO("Finished %s", meta.longname_en);
                         try {
-                            res[std::to_string(title.titleId)] = meta.longname_en;
+                            res[std::to_string(title.titleId)] = getTitleLongname(&meta);
                             DEBUG_FUNCTION_LINE_INFO("Written to JSON");
                         } catch (std::exception &e) {
                             DEBUG_FUNCTION_LINE_ERR("Failed to write title to JSON: %s\n", e.what());
                         }
                     } else {
-                        DEBUG_FUNCTION_LINE_INFO("No longname");
+                        DEBUG_FUNCTION_LINE_INFO("No English longname - not proceeding");
                     }
                 }
             }
@@ -310,14 +312,36 @@ void enableServerChanged(ConfigItemBoolean *item, bool newValue) {
     enableServer = newValue;
 }
 
+static void titleLangChanged(ConfigItemMultipleValues *item, uint32_t newValue) {
+    if (newValue != titleLang) {
+        WUPSStorageAPI::Store(TITLE_LANG_CONFIG_ID, newValue);
+    }
+    titleLang = newValue;
+}
+
 WUPSConfigAPICallbackStatus ConfigMenuOpenedCallback(WUPSConfigCategoryHandle rootHandle) {
     // To use the C++ API, we create new WUPSConfigCategory from the root handle!
     WUPSConfigCategory root = WUPSConfigCategory(rootHandle);
+
+    constexpr WUPSConfigItemMultipleValues::ValuePair titleLangMap[] = {
+            {LANG_ENGLISH, "English"},
+            {LANG_JAPANESE, "Japanese"},
+            {LANG_FRENCH, "French"},
+            {LANG_GERMAN, "German"},
+            {LANG_ITALIAN, "Italian"},
+            {LANG_SPANISH, "Spanish"},
+            {LANG_SIMPLIFIED_CHINESE, "Chinese (Simplified)"},
+            {LANG_KOREAN, "Korean"},
+            {LANG_DUTCH, "Dutch"},
+            {LANG_PORTUGUESE, "Portuguese"},
+            {LANG_RUSSIAN, "Russian"},
+            {LANG_TRADITIONAL_CHINESE, "Chinese (Traditional)"}};
 
     // The functions of the Config API come in two variants: One that throws an exception, and another one which doesn't
     // To use the Config API without exception see the example below this try/catch block.
     try {
         root.add(WUPSConfigItemBoolean::Create(ENABLE_SERVER_CONFIG_ID, "Enable Server", ENABLE_SERVER_DEFAULT_VALUE, enableServer, enableServerChanged));
+        root.add(WUPSConfigItemMultipleValues::CreateFromValue(TITLE_LANG_CONFIG_ID, "Title Language:", TITLE_LANG_DEFAULT_VALUE, titleLang, titleLangMap, titleLangChanged));
     } catch (std::exception &e) {
         DEBUG_FUNCTION_LINE_ERR("Creating config menu failed: %s", e.what());
         return WUPSCONFIG_API_CALLBACK_RESULT_ERROR;
@@ -372,6 +396,9 @@ INITIALIZE_PLUGIN() {
 
     WUPSStorageError storageRes;
     if ((storageRes = WUPSStorageAPI::GetOrStoreDefault(ENABLE_SERVER_CONFIG_ID, enableServer, ENABLE_SERVER_DEFAULT_VALUE)) != WUPS_STORAGE_ERROR_SUCCESS) {
+        DEBUG_FUNCTION_LINE_ERR("GetOrStoreDefault failed: %s (%d)", WUPSStorageAPI_GetStatusStr(storageRes), storageRes);
+    }
+    if ((storageRes = WUPSStorageAPI::GetOrStoreDefault(TITLE_LANG_CONFIG_ID, titleLang, (uint32_t) TITLE_LANG_DEFAULT_VALUE)) != WUPS_STORAGE_ERROR_SUCCESS) {
         DEBUG_FUNCTION_LINE_ERR("GetOrStoreDefault failed: %s (%d)", WUPSStorageAPI_GetStatusStr(storageRes), storageRes);
     }
     if ((storageRes = WUPSStorageAPI::SaveStorage()) != WUPS_STORAGE_ERROR_SUCCESS) {
