@@ -21,43 +21,48 @@
 uint32_t titleLang = TITLE_LANG_DEFAULT_VALUE;
 
 inline char *getTitleLongname(ACPMetaXml *meta) {
+    char *ret;
     switch (titleLang) {
         case LANG_JAPANESE:
-            return meta->longname_ja;
+            ret = meta->longname_ja;
             break;
         case LANG_FRENCH:
-            return meta->longname_fr;
+            ret = meta->longname_fr;
             break;
         case LANG_GERMAN:
-            return meta->longname_de;
+            ret = meta->longname_de;
             break;
         case LANG_ITALIAN:
-            return meta->longname_it;
+            ret = meta->longname_it;
             break;
         case LANG_SPANISH:
-            return meta->longname_es;
+            ret = meta->longname_es;
             break;
         case LANG_SIMPLIFIED_CHINESE:
-            return meta->longname_zhs;
+            ret = meta->longname_zhs;
             break;
         case LANG_KOREAN:
-            return meta->longname_ko;
+            ret = meta->longname_ko;
             break;
         case LANG_DUTCH:
-            return meta->longname_nl;
+            ret = meta->longname_nl;
             break;
         case LANG_PORTUGUESE:
-            return meta->longname_pt;
+            ret = meta->longname_pt;
             break;
         case LANG_RUSSIAN:
-            return meta->longname_ru;
+            ret = meta->longname_ru;
             break;
         case LANG_TRADITIONAL_CHINESE:
-            return meta->longname_zht;
+            ret = meta->longname_zht;
             break;
         case LANG_ENGLISH:
         default:
-            return meta->longname_en;
+            ret = meta->longname_en;
             break;
     }
+
+    // Fallback for titles which don't have a language-specific translation
+    if (ret != NULL && ret[0] == '\0') ret = meta->longname_en;
+    return ret;
 }
