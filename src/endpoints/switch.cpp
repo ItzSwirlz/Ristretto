@@ -63,4 +63,15 @@ void registerSwitchEndpoints(HttpServer &server) {
         }
         return HttpResponse{200};
     });
+
+    // Switch to the home button menu.
+    // FIXME: This actually causes issues, like when trying to call this while
+    // the menu is already open - generally all HBM/overlayed applications
+    // because of ProcUI magic or something that I still need to understand.
+    // There are weird behaviors that need to be assessed in general about
+    // launching and switching titles and applications.
+    server.when("/switch/hbm")->posted([](const HttpRequest &req) {
+        _SYSSwitchToHBMWithMode(0);
+        return HttpResponse{200};
+    });
 }
