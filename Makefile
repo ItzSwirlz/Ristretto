@@ -21,7 +21,7 @@ WUT_ROOT := $(DEVKITPRO)/wut
 #-------------------------------------------------------------------------------
 TARGET		:=	Ristretto
 BUILD		:=	build
-SOURCES		:=	src src/utils src/http src/MiniJson/Source/src
+SOURCES		:=	src src/endpoints src/http src/MiniJson/Source/src src/utils
 DATA		:=	data
 INCLUDES	:=	src src/MiniJson/Source/include
 
