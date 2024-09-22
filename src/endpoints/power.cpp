@@ -1,4 +1,4 @@
-#include "endpoints/power.h"
+#include "power.h"
 
 void registerPowerEndpoints(HttpServer &server) {
     // Shuts down the console regardless of what state it currently is in.

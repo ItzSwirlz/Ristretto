@@ -1,4 +1,4 @@
-#include "endpoints/switch.h"
+#include "switch.h"
 
 void registerSwitchEndpoints(HttpServer &server) {
     // Switch to the current title's manual.

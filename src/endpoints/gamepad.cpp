@@ -1,4 +1,4 @@
-#include "endpoints/gamepad.h"
+#include "gamepad.h"
 
 void registerGamepadEndpoints(HttpServer &server) {
     server.when("/gamepad/battery")->requested([](const HttpRequest &req) {

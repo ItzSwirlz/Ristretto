@@ -1,4 +1,4 @@
-#include "endpoints/launch.h"
+#include "launch.h"
 
 void registerLaunchEndpoints(HttpServer &server) {
     // Launches the Wii U Menu

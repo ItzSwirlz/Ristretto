@@ -1,4 +1,4 @@
-#include "endpoints/device.h"
+#include "device.h"
 
 void registerDeviceEndpoints(HttpServer &server) {
     // Gets the device serial number.

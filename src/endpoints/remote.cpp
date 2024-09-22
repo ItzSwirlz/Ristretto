@@ -1,4 +1,4 @@
-#include "endpoints/remote.h"
+#include "remote.h"
 
 void registerRemoteEndpoints(HttpServer &server) {
     // Presses a specific key based on what is requested.

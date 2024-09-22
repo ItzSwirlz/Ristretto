@@ -1,4 +1,4 @@
-#include "utils/endian.h"
+#include "endian.h"
 
 uint16_t
 bswap16(uint16_t int16) {

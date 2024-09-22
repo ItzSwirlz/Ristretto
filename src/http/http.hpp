@@ -74,7 +74,7 @@
 #endif
 
 // use custom endian.h for wii u
-#include "utils/endian.h"
+#include "../utils/endian.h"
 
 enum class HttpRequestMethod { GET,
                                POST,

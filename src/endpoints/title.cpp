@@ -1,5 +1,5 @@
-#include "endpoints/title.h"
-#include "languages.h" // for access to titleLang
+#include "title.h"
+#include "../languages.h" // for access to titleLang
 
 inline char *getTitleLongname(ACPMetaXml *meta) {
     char *ret;
