@@ -111,6 +111,7 @@ void registerLaunchEndpoints(HttpServer &server) {
             SYSLaunchTitle(id);
         } else {
             DEBUG_FUNCTION_LINE_ERR("Title ID doesn't exist!");
+            NotificationModule_AddErrorNotification("The title ID requested does not exist.");
             return HttpResponse{404, "text/plain", "Title ID doesn't exist!"};
         }
 

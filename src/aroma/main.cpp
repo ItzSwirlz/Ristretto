@@ -10,6 +10,7 @@
 #include "globals.h"
 #include "http.hpp"
 #include <nn/ac.h>
+#include <notifications/notifications.h>
 #include <wups.h>
 #include <wups/config/WUPSConfigItemBoolean.h>
 #include <wups/config/WUPSConfigItemIntegerRange.h>
@@ -164,6 +165,7 @@ INITIALIZE_PLUGIN() {
     // Logging only works when compiled with `make DEBUG=1`. See the README for more information.
     WHBLogCafeInit();
     WHBLogUdpInit();
+    NotificationModule_InitLibrary();
 
     DEBUG_FUNCTION_LINE("Hello world! - Ristretto");
 
@@ -188,6 +190,7 @@ INITIALIZE_PLUGIN() {
 DEINITIALIZE_PLUGIN() {
     stop_server();
     DEBUG_FUNCTION_LINE("Ristretto deinitializing.");
+    NotificationModule_DeInitLibrary();
     WHBLogUdpDeinit();
     WHBLogCafeDeinit();
 }
