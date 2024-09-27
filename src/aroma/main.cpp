@@ -7,6 +7,7 @@
 #include "../endpoints/title.h"
 #include "../languages.h"
 #include "../utils/logger.h"
+#include "globals.h"
 #include "http.hpp"
 #include <nn/ac.h>
 #include <wups.h>
