@@ -1,16 +1,41 @@
 #include "remote.h"
 
 void registerRemoteEndpoints(HttpServer &server) {
-    // Presses a specific key based on what is requested.
-    // The "button" key in the JSON request will be the value
-    // of the button as defined in the VPADButtons enum.
-    // For performance purposes on the console, Ristretto
-    // should not have to map which key means what.
-    // The home automation integration should do so and set the value directly.
-    server.when("/remote/key")->posted([](const HttpRequest &req) {
-        auto key = req.json().toObject();
+    // To prevent potential bad behavior, only allow for specific buttons.
 
-        button_value = stoi(key["button"].toString());
+    // A - 0x8000
+    server.when("/remote/key/a")->posted([](const HttpRequest &req) {
+        button_value = 0x8000;
+        return HttpResponse{200};
+    });
+
+    // B - 0x4000
+    server.when("/remote/key/b")->posted([](const HttpRequest &req) {
+        button_value = 0x4000;
+        return HttpResponse{200};
+    });
+
+    // Left - 0x0800
+    server.when("/remote/key/left")->posted([](const HttpRequest &req) {
+        button_value = 0x0800;
+        return HttpResponse{200};
+    });
+
+    // Right - 0x0400
+    server.when("/remote/key/right")->posted([](const HttpRequest &req) {
+        button_value = 0x0400;
+        return HttpResponse{200};
+    });
+
+    // Up - 0x0200
+    server.when("/remote/key/up")->posted([](const HttpRequest &req) {
+        button_value = 0x0200;
+        return HttpResponse{200};
+    });
+
+    // Down - 0x0100
+    server.when("/remote/key/down")->posted([](const HttpRequest &req) {
+        button_value = 0x0100;
         return HttpResponse{200};
     });
 }
