@@ -5,6 +5,7 @@
 #include "../endpoints/remote.h"
 #include "../endpoints/switch.h"
 #include "../endpoints/title.h"
+#include "../endpoints/vwii.h"
 #include "../languages.h"
 #include "../utils/logger.h"
 #include "globals.h"
@@ -61,6 +62,8 @@ void make_server() {
         registerRemoteEndpoints(server);
         registerSwitchEndpoints(server);
         registerTitleEndpoints(server);
+
+        registervWiiEndpoints(server);
 
         // TODO: Make the port configurable
         server.startListening(8572);

@@ -62,6 +62,7 @@ void registerLaunchEndpoints(HttpServer &server) {
         return HttpResponse{200};
     });
 
+    // If you're looking for vWii data management, see vwii.cpp and its data manager launch endpoint
     server.when("/launch/settings/data_management")->posted([](const HttpRequest &req) {
         _SYSLaunchSettings(settingsArgsFromTarget(SYS_SETTINGS_JUMP_TO_DATA_MANAGEMENT));
         return HttpResponse{200};
