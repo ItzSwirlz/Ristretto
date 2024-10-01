@@ -1,6 +1,7 @@
 #include "../endpoints/device.h"
 #include "../endpoints/gamepad.h"
 #include "../endpoints/launch.h"
+#include "../endpoints/odd.h"
 #include "../endpoints/power.h"
 #include "../endpoints/remote.h"
 #include "../endpoints/switch.h"
@@ -58,6 +59,7 @@ void make_server() {
         registerDeviceEndpoints(server);
         registerGamepadEndpoints(server);
         registerLaunchEndpoints(server);
+        registerODDEndpoints(server);
         registerPowerEndpoints(server);
         registerRemoteEndpoints(server);
         registerSwitchEndpoints(server);
