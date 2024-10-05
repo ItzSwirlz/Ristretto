@@ -70,6 +70,8 @@ void make_server() {
         // TODO: Make the port configurable
         server.startListening(8572);
     } catch (std::exception &e) {
+        // FIXME: write good strings that can easily be translated
+        NotificationModule_AddErrorNotification("Ristretto threw an exception. If the problem persists, check system logs.");
         DEBUG_FUNCTION_LINE_INFO("Exception thrown in the HTTP server: %s\n", e.what());
     }
 }
