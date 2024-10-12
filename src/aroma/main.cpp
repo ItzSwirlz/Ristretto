@@ -1,5 +1,6 @@
 #include "../endpoints/device.h"
 #include "../endpoints/gamepad.h"
+#include "../endpoints/homebrew.h"
 #include "../endpoints/launch.h"
 #include "../endpoints/odd.h"
 #include "../endpoints/power.h"
@@ -59,6 +60,7 @@ void make_server() {
 
         registerDeviceEndpoints(server);
         registerGamepadEndpoints(server);
+        registerHomebrewEndpoints(server);
         registerLaunchEndpoints(server);
         registerODDEndpoints(server);
         registerPowerEndpoints(server);
