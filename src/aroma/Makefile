@@ -43,7 +43,7 @@ CXXFLAGS	:= $(CFLAGS) -std=c++23
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-g $(ARCH) $(RPXSPECS) -Wl,-Map,$(notdir $*.map) $(WUPSSPECS)
 
-LIBS	:= -lnotifications -lwups -lwut
+LIBS	:= -lnotifications -lrpxloader -lwups -lwut
 
 #-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -
 #list of directories containing libraries, this must be the top level

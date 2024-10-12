@@ -1,6 +1,8 @@
 #include "title.h"
 #include "../languages.h" // for access to titleLang
 
+#include <rpxloader/rpxloader.h>
+
 inline char *getTitleLongname(ACPMetaXml *meta) {
     char *ret;
     switch (titleLang) {
@@ -49,7 +51,21 @@ inline char *getTitleLongname(ACPMetaXml *meta) {
 }
 
 void registerTitleEndpoints(HttpServer &server) {
+    // Returns the current title - for both Wii U applications and homebrew.
+    // The two are together so integrations can only refer to one endpoint.
     server.when("/title/current")->requested([](const HttpRequest &req) {
+        // Check if we are running a Homebrew application
+        // Preallocate a string for the path
+        std::string hb_path(1024, '\0');
+        int size    = 1024;
+        int rpx_res = RPXLoader_GetPathOfRunningExecutable((char *) hb_path.c_str(), size);
+        if (rpx_res == RPX_LOADER_RESULT_SUCCESS) {
+            // Resize the string to save memory
+            hb_path.resize(strlen(hb_path.c_str()));
+            return HttpResponse{200, "text/plain", hb_path};
+        }
+
+        // Therefore we are running an actual application.
         ACPTitleId id;
         ACPResult res = ACPGetTitleIdOfMainApplication(&id);
         if (res) {

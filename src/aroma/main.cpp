@@ -1,5 +1,6 @@
 #include "../endpoints/device.h"
 #include "../endpoints/gamepad.h"
+#include "../endpoints/homebrew.h"
 #include "../endpoints/launch.h"
 #include "../endpoints/odd.h"
 #include "../endpoints/power.h"
@@ -13,6 +14,7 @@
 #include "http.hpp"
 #include <nn/ac.h>
 #include <notifications/notifications.h>
+#include <rpxloader/rpxloader.h>
 #include <wups.h>
 #include <wups/config/WUPSConfigItemBoolean.h>
 #include <wups/config/WUPSConfigItemIntegerRange.h>
@@ -58,6 +60,7 @@ void make_server() {
 
         registerDeviceEndpoints(server);
         registerGamepadEndpoints(server);
+        registerHomebrewEndpoints(server);
         registerLaunchEndpoints(server);
         registerODDEndpoints(server);
         registerPowerEndpoints(server);
@@ -173,6 +176,9 @@ INITIALIZE_PLUGIN() {
     WHBLogCafeInit();
     WHBLogUdpInit();
     NotificationModule_InitLibrary();
+    if (RPXLoader_InitLibrary() != RPX_LOADER_RESULT_SUCCESS) {
+        DEBUG_FUNCTION_LINE_ERR("Failed to init RPX loader");
+    }
 
     DEBUG_FUNCTION_LINE("Hello world! - Ristretto");
 
@@ -197,6 +203,7 @@ INITIALIZE_PLUGIN() {
 DEINITIALIZE_PLUGIN() {
     stop_server();
     DEBUG_FUNCTION_LINE("Ristretto deinitializing.");
+    RPXLoader_DeInitLibrary();
     NotificationModule_DeInitLibrary();
     WHBLogUdpDeinit();
     WHBLogCafeDeinit();
