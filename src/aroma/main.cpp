@@ -1,3 +1,4 @@
+#include "../endpoints/cec.h"
 #include "../endpoints/device.h"
 #include "../endpoints/gamepad.h"
 #include "../endpoints/launch.h"
@@ -11,8 +12,10 @@
 #include "../utils/logger.h"
 #include "globals.h"
 #include "http.hpp"
+#include <avm/cec.h>
 #include <nn/ac.h>
 #include <notifications/notifications.h>
+#include <tve/cec.h>
 #include <wups.h>
 #include <wups/config/WUPSConfigItemBoolean.h>
 #include <wups/config/WUPSConfigItemIntegerRange.h>
@@ -56,6 +59,7 @@ void make_server() {
             return HttpResponse{200, "text/plain", "Ristretto"};
         });
 
+        registerCECEndpoints(server);
         registerDeviceEndpoints(server);
         registerGamepadEndpoints(server);
         registerLaunchEndpoints(server);
@@ -173,6 +177,10 @@ INITIALIZE_PLUGIN() {
     WHBLogCafeInit();
     WHBLogUdpInit();
     NotificationModule_InitLibrary();
+    TVECECInit();
+    TVESetCECEnable(true);
+    AVMCECInit();
+    AVMEnableCEC();
 
     DEBUG_FUNCTION_LINE("Hello world! - Ristretto");
 
