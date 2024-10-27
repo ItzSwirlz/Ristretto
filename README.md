@@ -12,6 +12,7 @@ Ristretto is a plugin for Aroma that provides a foundation for smart home automa
 
 1. Copy the file `Ristretto.wps` into `sd:/wiiu/environments/aroma/plugins`.
 2. Requires the [WiiUPluginLoaderBackend](https://github.com/wiiu-env/WiiUPluginLoaderBackend) in `sd:/wiiu/environments/aroma/modules`.
+2. Requires the [NotificationModule](https://github.com/wiiu-env/NotificationModule) in `sd:/wiiu/environments/aroma/modules`.
 
 Start the environment and the backend should load the plugin. By default, the port runs on :8572. You'll know the server is working when you open `http://(wiiu_ip_address):8572` in your browser and you should see the text "Ristretto".
 
@@ -65,5 +66,6 @@ Ristretto is a big project. It explores so many different areas of the Wii U and
 - [Maschell](https://github.com/maschell) - For everything he has done with the Wii U homebrew scene, and for helping me in general
 - [Daniel K.O.](https://github.com/dkosmari) - Helping in general, debugging, advice with sockets, threading, function hooking
 - [TraceEntertains](https://github.com/TraceEntertains) - Defining endian functions (e.g. bswap32) for Wii U, config menu, research with title information
-- [Wish](https://github.com/wish13yt) - Ristretto logo
+- [Wish](https://github.com/wish13yt) - Original Ristretto logo
+- [Artisan71](https://github.com/Artisan71) - Current Ristretto logo
 - You, for checking out this project.
