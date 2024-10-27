@@ -177,10 +177,6 @@ INITIALIZE_PLUGIN() {
     WHBLogCafeInit();
     WHBLogUdpInit();
     NotificationModule_InitLibrary();
-    TVECECInit();
-    TVESetCECEnable(true);
-    AVMCECInit();
-    AVMEnableCEC();
 
     DEBUG_FUNCTION_LINE("Hello world! - Ristretto");
 
@@ -214,6 +210,10 @@ DEINITIALIZE_PLUGIN() {
 ON_APPLICATION_START() {
     nn::ac::Initialize();
     nn::ac::ConnectAsync();
+    TVECECInit();
+    TVESetCECEnable(true);
+    AVMCECInit();
+    AVMEnableCEC();
     if (!enableServer) return;
     make_server_on_thread();
 }
