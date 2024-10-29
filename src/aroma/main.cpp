@@ -39,11 +39,15 @@ WUPS_USE_STORAGE("ristretto"); // Unique id for the storage api
 HttpServer server;
 bool server_made = false;
 
+#define ENABLE_CEC_DEFAULT_VALUE    true
 #define ENABLE_SERVER_DEFAULT_VALUE true
+
+#define ENABLE_CEC_CONFIG_ID        "enableCEC"
 #define ENABLE_SERVER_CONFIG_ID     "enableServer"
 #define TITLE_LANG_CONFIG_ID        "titleLang"
 
 bool enableServer = ENABLE_SERVER_DEFAULT_VALUE;
+bool enableCEC    = ENABLE_CEC_DEFAULT_VALUE;
 
 void make_server() {
     if (server_made) {
@@ -59,7 +63,10 @@ void make_server() {
             return HttpResponse{200, "text/plain", "Ristretto"};
         });
 
-        registerCECEndpoints(server);
+        if (enableCEC) {
+            registerCECEndpoints(server);
+        }
+
         registerDeviceEndpoints(server);
         registerGamepadEndpoints(server);
         registerLaunchEndpoints(server);
@@ -97,6 +104,14 @@ void make_server_on_thread() {
     }
 }
 
+void enableCECChanged(ConfigItemBoolean *item, bool newValue) {
+    if (newValue != enableCEC) {
+        WUPSStorageAPI::Store(ENABLE_CEC_CONFIG_ID, newValue);
+    }
+
+    enableCEC = newValue;
+}
+
 void enableServerChanged(ConfigItemBoolean *item, bool newValue) {
     // If the value has changed, we store it in the storage.
     if (newValue != enableServer)
@@ -131,6 +146,7 @@ WUPSConfigAPICallbackStatus ConfigMenuOpenedCallback(WUPSConfigCategoryHandle ro
 
     try {
         root.add(WUPSConfigItemBoolean::Create(ENABLE_SERVER_CONFIG_ID, "Enable Server", ENABLE_SERVER_DEFAULT_VALUE, enableServer, enableServerChanged));
+        root.add(WUPSConfigItemBoolean::Create(ENABLE_CEC_CONFIG_ID, "Enable HDMI-CEC", ENABLE_CEC_DEFAULT_VALUE, enableCEC, enableCECChanged));
         root.add(WUPSConfigItemMultipleValues::CreateFromValue(TITLE_LANG_CONFIG_ID, "Title Language:", TITLE_LANG_DEFAULT_VALUE, titleLang, titleLangMap, titleLangChanged));
     } catch (std::exception &e) {
         DEBUG_FUNCTION_LINE_ERR("Creating config menu failed: %s", e.what());
@@ -210,10 +226,15 @@ DEINITIALIZE_PLUGIN() {
 ON_APPLICATION_START() {
     nn::ac::Initialize();
     nn::ac::ConnectAsync();
-    TVECECInit();
-    TVESetCECEnable(true);
-    AVMCECInit();
-    AVMEnableCEC();
+
+    // CEC seems to be consistent when it starts every time an application starts.
+    if (enableCEC) {
+        TVECECInit();
+        TVESetCECEnable(true);
+        AVMCECInit();
+        AVMEnableCEC();
+    }
+
     if (!enableServer) return;
     make_server_on_thread();
 }
