@@ -211,6 +211,37 @@ INITIALIZE_PLUGIN() {
     if ((storageRes = WUPSStorageAPI::SaveStorage()) != WUPS_STORAGE_ERROR_SUCCESS) {
         DEBUG_FUNCTION_LINE_ERR("SaveStorage failed: %s (%d)", WUPSStorageAPI_GetStatusStr(storageRes), storageRes);
     }
+
+    // One-Touch Play fix attempt: The TV turns on but doesn't switch to the Wii U input.
+    //
+    // The One-Touch Play Fix needs to be here, otherwise it will try to set the input every time an application
+    // starts. There are lots of scenarios this probably isn't good.
+    //
+    // So just enable it (then it will be re-enabled) just to send that request to switch input.
+    // The TV will turn on when the console powers on (because that's the boot process)
+    // but when the Aroma plugin loads, in theory it should turn on the TV and request active source.
+    if (enableCEC) {
+        TVECECInit();
+        TVESetCECEnable(true);
+        AVMCECInit();
+        AVMEnableCEC();
+
+        uint8_t params = 0;
+        TVECECSendCommand(TVE_CEC_DEVICE_TV, TVE_CEC_OPCODE_GIVE_PHYSICAL_ADDRESS, &params, 0);
+
+        // See what we got back for that address
+        TVECECLogicalAddress outInitiator;
+        TVECECOpCode outOpCode;
+        uint8_t tvAddress;
+        uint8_t outNumParams;
+        TVECECReceiveCommand(&outInitiator, &outOpCode, &tvAddress, &outNumParams);
+
+        // Request we turn on TV
+        TVECECSendCommand(TVE_CEC_DEVICE_TV, TVE_CEC_OPCODE_TEXT_VIEW_ON, &params, 0);
+
+        // Switch to our source
+        TVECECSendCommand(TVE_CEC_DEVICE_TV, TVE_CEC_OPCODE_ACTIVE_SOURCE, &tvAddress, 1);
+    }
 }
 
 // Gets called when the plugin will be unloaded.
