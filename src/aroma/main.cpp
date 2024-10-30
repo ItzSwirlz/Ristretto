@@ -77,10 +77,12 @@ void make_server() {
 }
 
 void stop_server() {
-    if (!enableServer || !server_made) return;
     // dont shut down what doesnt exist
+    if (!server_made) return;
+
     server.shutdown();
     server_made = false;
+
     DEBUG_FUNCTION_LINE("Server shut down.");
 }
 
