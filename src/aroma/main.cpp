@@ -1,3 +1,4 @@
+#include "../endpoints/cec.h"
 #include "../endpoints/device.h"
 #include "../endpoints/gamepad.h"
 #include "../endpoints/launch.h"
@@ -11,8 +12,10 @@
 #include "../utils/logger.h"
 #include "globals.h"
 #include "http.hpp"
+#include <avm/cec.h>
 #include <nn/ac.h>
 #include <notifications/notifications.h>
+#include <tve/cec.h>
 #include <wups.h>
 #include <wups/config/WUPSConfigItemBoolean.h>
 #include <wups/config/WUPSConfigItemIntegerRange.h>
@@ -36,11 +39,15 @@ WUPS_USE_STORAGE("ristretto"); // Unique id for the storage api
 HttpServer server;
 bool server_made = false;
 
+#define ENABLE_CEC_DEFAULT_VALUE    true
 #define ENABLE_SERVER_DEFAULT_VALUE true
+
+#define ENABLE_CEC_CONFIG_ID        "enableCEC"
 #define ENABLE_SERVER_CONFIG_ID     "enableServer"
 #define TITLE_LANG_CONFIG_ID        "titleLang"
 
 bool enableServer = ENABLE_SERVER_DEFAULT_VALUE;
+bool enableCEC    = ENABLE_CEC_DEFAULT_VALUE;
 
 void make_server() {
     if (server_made) {
@@ -55,6 +62,10 @@ void make_server() {
         server.when("/")->requested([](const HttpRequest &req) {
             return HttpResponse{200, "text/plain", "Ristretto"};
         });
+
+        if (enableCEC) {
+            registerCECEndpoints(server);
+        }
 
         registerDeviceEndpoints(server);
         registerGamepadEndpoints(server);
@@ -95,6 +106,14 @@ void make_server_on_thread() {
     }
 }
 
+void enableCECChanged(ConfigItemBoolean *item, bool newValue) {
+    if (newValue != enableCEC) {
+        WUPSStorageAPI::Store(ENABLE_CEC_CONFIG_ID, newValue);
+    }
+
+    enableCEC = newValue;
+}
+
 void enableServerChanged(ConfigItemBoolean *item, bool newValue) {
     // If the value has changed, we store it in the storage.
     if (newValue != enableServer)
@@ -129,6 +148,7 @@ WUPSConfigAPICallbackStatus ConfigMenuOpenedCallback(WUPSConfigCategoryHandle ro
 
     try {
         root.add(WUPSConfigItemBoolean::Create(ENABLE_SERVER_CONFIG_ID, "Enable Server", ENABLE_SERVER_DEFAULT_VALUE, enableServer, enableServerChanged));
+        root.add(WUPSConfigItemBoolean::Create(ENABLE_CEC_CONFIG_ID, "Enable HDMI-CEC", ENABLE_CEC_DEFAULT_VALUE, enableCEC, enableCECChanged));
         root.add(WUPSConfigItemMultipleValues::CreateFromValue(TITLE_LANG_CONFIG_ID, "Title Language:", TITLE_LANG_DEFAULT_VALUE, titleLang, titleLangMap, titleLangChanged));
     } catch (std::exception &e) {
         DEBUG_FUNCTION_LINE_ERR("Creating config menu failed: %s", e.what());
@@ -193,6 +213,37 @@ INITIALIZE_PLUGIN() {
     if ((storageRes = WUPSStorageAPI::SaveStorage()) != WUPS_STORAGE_ERROR_SUCCESS) {
         DEBUG_FUNCTION_LINE_ERR("SaveStorage failed: %s (%d)", WUPSStorageAPI_GetStatusStr(storageRes), storageRes);
     }
+
+    // One-Touch Play fix attempt: The TV turns on but doesn't switch to the Wii U input.
+    //
+    // The One-Touch Play Fix needs to be here, otherwise it will try to set the input every time an application
+    // starts. There are lots of scenarios this probably isn't good.
+    //
+    // So just enable it (then it will be re-enabled) just to send that request to switch input.
+    // The TV will turn on when the console powers on (because that's the boot process)
+    // but when the Aroma plugin loads, in theory it should turn on the TV and request active source.
+    if (enableCEC) {
+        TVECECInit();
+        TVESetCECEnable(true);
+        AVMCECInit();
+        AVMEnableCEC();
+
+        uint8_t params = 0;
+        TVECECSendCommand(TVE_CEC_DEVICE_TV, TVE_CEC_OPCODE_GIVE_PHYSICAL_ADDRESS, &params, 0);
+
+        // See what we got back for that address
+        TVECECLogicalAddress outInitiator;
+        TVECECOpCode outOpCode;
+        uint8_t tvAddress;
+        uint8_t outNumParams;
+        TVECECReceiveCommand(&outInitiator, &outOpCode, &tvAddress, &outNumParams);
+
+        // Request we turn on TV
+        TVECECSendCommand(TVE_CEC_DEVICE_TV, TVE_CEC_OPCODE_TEXT_VIEW_ON, &params, 0);
+
+        // Switch to our source
+        TVECECSendCommand(TVE_CEC_DEVICE_TV, TVE_CEC_OPCODE_ACTIVE_SOURCE, &tvAddress, 1);
+    }
 }
 
 // Gets called when the plugin will be unloaded.
@@ -208,6 +259,15 @@ DEINITIALIZE_PLUGIN() {
 ON_APPLICATION_START() {
     nn::ac::Initialize();
     nn::ac::ConnectAsync();
+
+    // CEC seems to be consistent when it starts every time an application starts.
+    if (enableCEC) {
+        TVECECInit();
+        TVESetCECEnable(true);
+        AVMCECInit();
+        AVMEnableCEC();
+    }
+
     if (!enableServer) return;
     make_server_on_thread();
 }
