@@ -46,6 +46,12 @@ void registerCECEndpoints(HttpServer &server) {
         return HttpResponse{200, "text/plain", std::to_string(b)};
     });
 
+    server.when("/cec/request_tv_off")->posted([](const HttpRequest &req) {
+        uint8_t params = 0;
+        bool b         = TVECECSendCommand(TVE_CEC_DEVICE_TV, TVE_CEC_OPCODE_STANDBY, &params, 0);
+        return HttpResponse{200, "text/plain", std::to_string(b)};
+    });
+
     server.when("/cec/request_tv_on")->posted([](const HttpRequest &req) {
         uint8_t params = 0;
         bool b         = TVECECSendCommand(TVE_CEC_DEVICE_TV, TVE_CEC_OPCODE_TEXT_VIEW_ON, &params, 0);
