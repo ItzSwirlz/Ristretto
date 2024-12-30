@@ -5,6 +5,7 @@
 #include "../endpoints/odd.h"
 #include "../endpoints/power.h"
 #include "../endpoints/remote.h"
+#include "../endpoints/sdhc.h"
 #include "../endpoints/switch.h"
 #include "../endpoints/title.h"
 #include "../endpoints/vwii.h"
@@ -15,6 +16,7 @@
 #include <avm/cec.h>
 #include <nn/ac.h>
 #include <notifications/notifications.h>
+#include <sdutils/sdutils.h>
 #include <tve/cec.h>
 #include <wups.h>
 #include <wups/config/WUPSConfigItemBoolean.h>
@@ -73,6 +75,7 @@ void make_server() {
         registerODDEndpoints(server);
         registerPowerEndpoints(server);
         registerRemoteEndpoints(server);
+        registerSDHCEndpoints(server);
         registerSwitchEndpoints(server);
         registerTitleEndpoints(server);
 
@@ -195,6 +198,7 @@ INITIALIZE_PLUGIN() {
     WHBLogCafeInit();
     WHBLogUdpInit();
     NotificationModule_InitLibrary();
+    SDUtils_InitLibrary();
 
     DEBUG_FUNCTION_LINE("Hello world! - Ristretto");
 
@@ -248,8 +252,9 @@ INITIALIZE_PLUGIN() {
 
 // Gets called when the plugin will be unloaded.
 DEINITIALIZE_PLUGIN() {
-    stop_server();
     DEBUG_FUNCTION_LINE("Ristretto deinitializing.");
+    stop_server();
+    SDUtils_DeInitLibrary();
     NotificationModule_DeInitLibrary();
     WHBLogUdpDeinit();
     WHBLogCafeDeinit();
