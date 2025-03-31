@@ -65,6 +65,23 @@ void registerTitleEndpoints(HttpServer &server) {
         return HttpResponse{200, "text/plain", getTitleLongname(meta)};
     });
 
+    server.when("/title/current/type")->requested([](const HttpRequest &req) {
+        int handle = MCP_Open();
+        if (handle < 0) {
+            throw std::runtime_error{"MCP_Open() failed with error " + std::to_string(handle)};
+        }
+
+        // ACP doesn't have the application type, so lets get it from MCP
+        uint64_t outId;
+        MCPTitleListType type;
+
+        MCP_GetTitleId(handle, &outId);
+        MCP_GetTitleInfo(handle, outId, &type);
+
+        // Frontend/API wrapper can translate to the actual app type: https://wut.devkitpro.org/mcp_8h_source.html#l00025
+        return HttpResponse{200, "text/plain", std::to_string(type.appType)};
+    });
+
     // NOT FOR HOMEBREW TITLES!!!!!!!
     server.when("/title/list")->requested([](const HttpRequest &req) {
         DEBUG_FUNCTION_LINE_INFO("Getting title list.");
