@@ -1,5 +1,7 @@
-FROM ghcr.io/wiiu-env/devkitppc:20240704
+FROM ghcr.io/wiiu-env/devkitppc:latest
 
-COPY --from=ghcr.io/wiiu-env/wiiupluginsystem:20230215 /artifacts $DEVKITPRO
+COPY --from=ghcr.io/wiiu-env/wiiupluginsystem:latest /artifacts $DEVKITPRO
+COPY --from=ghcr.io/wiiu-env/libnotifications:latest /artifacts $DEVKITPRO
+COPY --from=ghcr.io/wiiu-env/libsdutils:latest /artifacts $DEVKITPRO
 
 WORKDIR project

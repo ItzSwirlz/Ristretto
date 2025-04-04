@@ -1,4 +1,9 @@
-all:
+# Currently this is configured to build both projects (the eco process is basically dead)
+# If configuring with an IDE, set the Makefile directory to src/aroma or src/eco_process respectively.
+
+all: $(BUILD)
+
+$(BUILD):
 	make -C src/aroma
 	cp src/aroma/Ristretto.wps .
 	cp src/aroma/Ristretto.elf .
