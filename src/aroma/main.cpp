@@ -25,6 +25,8 @@
 #include <wups/config/WUPSConfigItemStub.h>
 #include <wups/config_api.h>
 
+#include <sys/iosupport.h>
+
 /**
     Mandatory plugin information.
     If not set correctly, the loader will refuse to use the plugin.
