@@ -1,6 +1,47 @@
 #include "device.h"
 
 void registerDeviceEndpoints(HttpServer &server) {
+    // Returns the following deivce information in JSON: The serial ID, model number, software version and hardware version.
+    // TODO: Look at what else from MCPSysProdSettings we should return
+    server.when("/device/info")->requested([](const HttpRequest &req) {
+        int handle = MCP_Open();
+        if (handle < 0) {
+            throw std::runtime_error{"MCP_Open() failed with error " + std::to_string(handle)};
+        }
+
+        MCPSysProdSettings settings alignas(0x40);
+        MCPError error = MCP_GetSysProdSettings(handle, &settings);
+        if (error) {
+            DEBUG_FUNCTION_LINE_ERR("Error at MCP_GetSysProdSettings");
+            return HttpResponse{500, "text/plain", "Couldn't get device info! Error at MCP_GetSysProdSettings"};
+        }
+
+        MCPSystemVersion *version = new MCPSystemVersion;
+        error                     = MCP_GetSystemVersion(handle, version);
+        if (error) {
+            DEBUG_FUNCTION_LINE_ERR("Error at MCP_GetSystemVersion");
+            return HttpResponse{500, "text/plain", "Couldn't get device info! Error at MCP_GetSystemVersion"};
+        }
+
+        MCP_Close(handle);
+
+        BSPHardwareVersion hw_ver;
+        BSPError err = bspGetHardwareVersion(&hw_ver);
+        if (err) {
+            DEBUG_FUNCTION_LINE_ERR("Error at bspGetHardwareVersion");
+            return HttpResponse{500, "text/plain", "Couldn't get device info! Error at bspGetHardwareVersion"};
+        }
+
+        miniJson::Json::_object ret;
+        ret["serial_id"]        = settings.serial_id;
+        ret["model_number"]     = settings.model_number;
+        ret["system_version"]   = std::format("{:d}.{:d}.{:d}{}", version->major, version->minor, version->patch, version->region);
+        ret["hardware_version"] = std::format("{:d}", hw_ver);
+
+        return HttpResponse{200, ret};
+    });
+
+
     // Gets the device serial number.
     server.when("/device/serial_id")->requested([](const HttpRequest &req) {
         // Credit to .danielko on Discord
