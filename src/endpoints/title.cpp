@@ -70,6 +70,8 @@ void registerTitleEndpoints(HttpServer &server) {
         MCPTitleListType type;
         MCP_GetTitleInfo(handle, id, &type);
 
+        MCP_Close(handle);
+
         miniJson::Json::_object ret;
         ret["id"]   = std::to_string(id);
         ret["name"] = getTitleLongname(meta);
@@ -117,6 +119,8 @@ void registerTitleEndpoints(HttpServer &server) {
 
         MCP_GetTitleId(handle, &outId);
         MCP_GetTitleInfo(handle, outId, &type);
+
+        MCP_Close(handle);
 
         // Frontend/API wrapper can translate to the actual app type: https://wut.devkitpro.org/mcp_8h_source.html#l00025
         return HttpResponse{200, "text/plain", std::to_string(type.appType)};
